@@ -55,15 +55,25 @@ three-step change:
 
 No other part of the editor needs to change.
 
-## Planned extensions
+## Extensions
 
-| Module | Status | Design note |
+| Module | Status | Notes |
 |---|---|---|
-| Collaborative editing | stub | Wire `@tiptap/extension-collaboration` to a shared Y.Doc over `y-websocket` / hocuspocus. `CollaborationCursor` reads user info from `ctx.user`. Enable by providing `ctx.features.collaboration.provider`. |
-| Track changes | partial | Ships `insertion`/`deletion` marks so the schema is stable. Toggling "track mode" maps every replace-step into those marks; accept/reject removes them. |
-| Versioning | stub | Editor-side contract: emits snapshots, offers `restore(snapshotId)`. Persistence belongs to the host app. |
+| Collaborative editing | implemented | Yjs-backed. Set `NEXT_PUBLIC_COLLAB_URL=ws://localhost:1234` (and optionally `NEXT_PUBLIC_COLLAB_ROOM`) to connect to a `y-websocket` server. IndexedDB persistence is on by default so reloads stay offline-friendly. The module gates itself off when no provider URL is configured. |
+| Track changes | implemented | Toggle the `✎ Track` button. While on, insertions are wrapped in `insertion` marks via `appendTransaction`; Backspace / Delete are intercepted to add `deletion` marks instead of removing text. `acceptAllChanges` / `rejectAllChanges` resolve the queue. |
+| Versioning | implemented | `Versioning` extension stores snapshots in `localStorage` keyed by `documentId`. Commands: `saveVersion(label?)`, `restoreVersion(id)`, `deleteVersion(id)`. The host `VersionsPanel` lists snapshots and lets you restore or compare. |
 | Locked / readonly / conditional blocks | implemented | `lockedBlock` node + `LockGuard` transaction filter. Modes: `locked`, `readonly`, `conditional` (string expression evaluated by the host). |
-| Side-by-side diff | stub | Two read-only editors sharing the same extension set, fed two snapshots. Track-changes marks and locked-block chrome render identically in both panes. |
+| Side-by-side diff | implemented | `DiffView` mounts two read-only editors using the same module pipeline and passes a per-block diff annotation to a `DiffDecorations` plugin so changed blocks light up green / red. Trigger by selecting two versions in the right-hand panel and clicking **Compare selected**. |
+
+### Running collaborative editing locally
+
+```bash
+npx y-websocket   # starts ws://localhost:1234
+NEXT_PUBLIC_COLLAB_URL=ws://localhost:1234 npm run dev
+```
+
+Open the page in two tabs - edits sync over the websocket and remote
+selections appear as colored carets.
 
 ## Why Turbopack
 

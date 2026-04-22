@@ -1,7 +1,7 @@
 "use client";
 
-import { EditorContent, useEditor } from "@tiptap/react";
-import { useMemo } from "react";
+import { EditorContent, useEditor, type Editor as TiptapEditor } from "@tiptap/react";
+import { useEffect, useMemo } from "react";
 import { buildTiptapExtensions, buildToolbarItems } from "./registry";
 import type { EditorExtensionContext, EditorExtensionModule } from "./types";
 import { Toolbar } from "./Toolbar";
@@ -12,6 +12,8 @@ export interface EditorProps {
   context: EditorExtensionContext;
   initialContent?: string;
   onUpdateJSON?: (json: unknown) => void;
+  /** Called whenever the underlying TipTap editor instance changes. */
+  onEditor?: (editor: TiptapEditor | null) => void;
 }
 
 export function Editor({
@@ -19,6 +21,7 @@ export function Editor({
   context,
   initialContent,
   onUpdateJSON,
+  onEditor,
 }: EditorProps) {
   const extensions = useMemo(
     () => buildTiptapExtensions(modules, context),
@@ -48,6 +51,13 @@ export function Editor({
     },
     [extensions, context.readOnly],
   );
+
+  useEffect(() => {
+    onEditor?.(editor);
+    return () => {
+      onEditor?.(null);
+    };
+  }, [editor, onEditor]);
 
   return (
     <div className={styles.root}>

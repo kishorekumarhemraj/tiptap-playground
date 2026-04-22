@@ -1,0 +1,93 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  height: 80vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.close {
+  font: inherit;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--fg);
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--bg);
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--border);
+}
+
+.pane:last-child {
+  border-right: none;
+}
+
+.paneHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.paneHeader strong {
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.paneContent {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.proseMirror {
+  outline: none;
+}
+
+.proseMirror :global(.diff-added) {
+  background: rgba(15, 123, 108, 0.12);
+  border-left: 3px solid var(--success);
+  padding-left: 8px;
+  margin-left: -11px;
+}
+
+.proseMirror :global(.diff-removed) {
+  background: rgba(224, 62, 62, 0.1);
+  border-left: 3px solid var(--danger);
+  padding-left: 8px;
+  margin-left: -11px;
+  text-decoration: line-through;
+  text-decoration-color: rgba(224, 62, 62, 0.4);
+}

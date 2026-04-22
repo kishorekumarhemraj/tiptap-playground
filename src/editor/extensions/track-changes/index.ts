@@ -1,61 +1,58 @@
-import { Mark } from "@tiptap/core";
 import type { EditorExtensionModule } from "../../types";
-
-/**
- * Track changes stub.
- *
- * Track-changes in ProseMirror is typically implemented as a pair of
- * marks (`insertion` and `deletion`) that carry author + timestamp
- * attributes. When "track changes" is ON, an input rule rewrites every
- * replace step so insertions become `insertion` marks and deletions
- * keep the original text wrapped in a `deletion` mark. Accept/reject
- * then just removes the mark (or the marked text).
- *
- * We ship the two marks here so the schema is stable from day one -
- * upgrading to a real implementation won't require a document migration.
- */
-const Insertion = Mark.create({
-  name: "insertion",
-  addAttributes() {
-    return {
-      author: { default: null },
-      authorId: { default: null },
-      timestamp: { default: null },
-    };
-  },
-  parseHTML() {
-    return [{ tag: "ins[data-track-change]" }];
-  },
-  renderHTML({ HTMLAttributes }) {
-    return ["ins", { "data-track-change": "insert", ...HTMLAttributes }, 0];
-  },
-});
-
-const Deletion = Mark.create({
-  name: "deletion",
-  addAttributes() {
-    return {
-      author: { default: null },
-      authorId: { default: null },
-      timestamp: { default: null },
-    };
-  },
-  parseHTML() {
-    return [{ tag: "del[data-track-change]" }];
-  },
-  renderHTML({ HTMLAttributes }) {
-    return ["del", { "data-track-change": "delete", ...HTMLAttributes }, 0];
-  },
-});
+import { Insertion, Deletion } from "./marks";
+import { TrackChanges } from "./trackChanges";
 
 export interface TrackChangesFeatureConfig {
-  active: boolean;
+  defaultActive?: boolean;
+}
+
+function getConfig(features: Record<string, unknown>): TrackChangesFeatureConfig {
+  const raw = features.trackChanges;
+  if (!raw || typeof raw !== "object") return {};
+  return raw as TrackChangesFeatureConfig;
 }
 
 export const trackChangesModule: EditorExtensionModule = {
   id: "track-changes",
   name: "Track changes",
   description:
-    "Insertion / deletion marks so edits can be proposed, reviewed, and accepted or rejected - the MS Word workflow.",
-  tiptap: () => [Insertion, Deletion],
+    "Insertion/deletion marks plus an MS-Word-style proposal/accept/reject flow.",
+  tiptap: (ctx) => {
+    const cfg = getConfig(ctx.features);
+    return [
+      Insertion,
+      Deletion,
+      TrackChanges.configure({
+        defaultActive: cfg.defaultActive ?? false,
+        author: { id: ctx.user.id, name: ctx.user.name },
+      }),
+    ];
+  },
+  toolbar: () => [
+    {
+      kind: "button",
+      id: "trackChangesToggle",
+      label: "✎ Track",
+      title: "Toggle track changes",
+      isActive: (editor) => editor.storage.trackChanges?.active === true,
+      onRun: (editor) => editor.commands.toggleTrackChanges(),
+    },
+    {
+      kind: "button",
+      id: "acceptAll",
+      label: "✓ Accept",
+      title: "Accept all changes",
+      onRun: (editor) => editor.chain().focus().acceptAllChanges().run(),
+    },
+    {
+      kind: "button",
+      id: "rejectAll",
+      label: "✗ Reject",
+      title: "Reject all changes",
+      onRun: (editor) => editor.chain().focus().rejectAllChanges().run(),
+    },
+  ],
 };
+
+export * from "./marks";
+export * from "./trackChanges";

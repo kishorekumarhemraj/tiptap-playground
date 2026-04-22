@@ -8,6 +8,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import type { EditorExtensionModule } from "../../types";
+import { getCollaborationConfig } from "../collaboration";
 
 /**
  * StarterKit in TipTap 3 bundles: Document, Paragraph, Text, Heading,
@@ -21,7 +22,7 @@ export const coreFormattingModule: EditorExtensionModule = {
   name: "Core formatting",
   description:
     "StarterKit plus Notion-style formatting (highlights, alignment, tasks, typography, placeholders).",
-  tiptap: () => [
+  tiptap: (ctx) => [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
       link: {
@@ -29,6 +30,10 @@ export const coreFormattingModule: EditorExtensionModule = {
         autolink: true,
         HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
       },
+      // Yjs supplies its own undo/redo via Y.UndoManager. Running both
+      // ProseMirror history and Yjs history at the same time corrupts
+      // the undo stack, so we drop the StarterKit one when collab is on.
+      undoRedo: getCollaborationConfig(ctx.features) ? false : undefined,
     }),
     Highlight.configure({ multicolor: true }),
     TextAlign.configure({ types: ["heading", "paragraph"] }),
