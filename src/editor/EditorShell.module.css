@@ -1,0 +1,27 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 13px;
+}
+
+.toggle {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hint {
+  color: var(--fg-muted);
+}
