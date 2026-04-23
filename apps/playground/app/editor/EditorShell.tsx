@@ -97,21 +97,33 @@ export function EditorShell() {
   return (
     <div className={styles.shell}>
       <div className={styles.controls}>
-        <label className={styles.toggle}>
-          <input
-            type="checkbox"
-            checked={readOnly}
-            onChange={(e) => setReadOnly(e.target.checked)}
-          />
-          <span>Read-only document</span>
-        </label>
-        <span className={styles.hint}>
-          {defaultExtensionModules.length} extension module
-          {defaultExtensionModules.length === 1 ? "" : "s"}
-          {collabEnabled
-            ? " · collab on"
-            : " · collab off (set NEXT_PUBLIC_COLLAB_URL)"}
-        </span>
+        <div className={styles.controlsLeft}>
+          <label className={styles.toggleLabel}>
+            <span className={styles.switchWrapper}>
+              <input
+                type="checkbox"
+                checked={readOnly}
+                onChange={(e) => setReadOnly(e.target.checked)}
+              />
+              <span className={styles.switchTrack} />
+              <span className={styles.switchThumb} />
+            </span>
+            Read-only
+          </label>
+        </div>
+        <div className={styles.controlsRight}>
+          <span className={styles.statusPill}>
+            <span
+              className={styles.statusDot}
+              data-off={!collabEnabled ? "true" : undefined}
+            />
+            {collabEnabled ? "Collab on" : "Collab off"}
+          </span>
+          <span className={styles.statusPill}>
+            {defaultExtensionModules.length} module
+            {defaultExtensionModules.length === 1 ? "" : "s"}
+          </span>
+        </div>
       </div>
       <div className={styles.body}>
         <div className={styles.editorColumn}>

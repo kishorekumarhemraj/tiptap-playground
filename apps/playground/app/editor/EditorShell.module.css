@@ -4,6 +4,7 @@
   position: relative;
 }
 
+/* ── Controls bar ── */
 .controls {
   display: flex;
   align-items: center;
@@ -11,27 +12,111 @@
   gap: 16px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--bg-subtle);
   font-size: 13px;
   flex-wrap: wrap;
 }
 
-.toggle {
-  display: inline-flex;
-  gap: 6px;
+.controlsLeft {
+  display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.controlsRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Toggle switch */
+.toggleLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
   user-select: none;
-}
-
-.hint {
   color: var(--fg-muted);
+  font-size: 13px;
 }
 
+.toggleLabel:hover {
+  color: var(--fg);
+}
+
+.switchWrapper {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.switchWrapper input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.switchTrack {
+  position: absolute;
+  inset: 0;
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+  transition: background var(--transition-fast);
+}
+
+.switchWrapper input:checked ~ .switchTrack {
+  background: var(--accent);
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast);
+  pointer-events: none;
+}
+
+.switchWrapper input:checked ~ .switchThumb {
+  transform: translateX(14px);
+}
+
+/* Status pill */
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
+
+.statusDot[data-off="true"] {
+  background: var(--border-strong);
+}
+
+/* ── Body ── */
 .body {
   display: flex;
   align-items: stretch;
-  min-height: 520px;
+  min-height: 540px;
 }
 
 .editorColumn {
@@ -39,14 +124,17 @@
   min-width: 0;
 }
 
+/* ── Diff overlay ── */
 .diffOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  z-index: 100;
   padding: 24px;
 }
 

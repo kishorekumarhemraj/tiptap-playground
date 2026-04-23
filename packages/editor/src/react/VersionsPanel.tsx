@@ -67,7 +67,7 @@ export function VersionsPanel({
   return (
     <aside className={`${styles.panel} ${className ?? ""}`.trim()}>
       <header className={styles.header}>
-        <strong>Versions</strong>
+        <span className={styles.headerTitle}>Versions</span>
         <span className={styles.count}>{snapshots.length}</span>
       </header>
 
