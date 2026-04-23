@@ -1,0 +1,73 @@
+import type { AnyExtension } from "@tiptap/react";
+import { Collaboration } from "@tiptap/extension-collaboration";
+import { CollaborationCaret } from "@tiptap/extension-collaboration-caret";
+import type { EditorExtensionModule } from "../../core/types";
+import type {
+  CollaborationProvider,
+  CollaborationProviderFactory,
+} from "../../drivers/collaboration-provider";
+
+// Session cache - the module never re-creates a Y.Doc for the same
+// (documentId, factory) pair so re-renders don't tear awareness down.
+const sessions = new WeakMap<
+  CollaborationProviderFactory,
+  Map<string, CollaborationProvider>
+>();
+
+function resolveProvider(
+  factory: CollaborationProviderFactory,
+  documentId: string,
+): CollaborationProvider | null {
+  let perFactory = sessions.get(factory);
+  if (!perFactory) {
+    perFactory = new Map();
+    sessions.set(factory, perFactory);
+  }
+  const cached = perFactory.get(documentId);
+  if (cached) return cached;
+  const provider = factory({ documentId });
+  if (provider) perFactory.set(documentId, provider);
+  return provider;
+}
+
+/**
+ * Collaboration module.
+ *
+ * The actual transport (websocket / hocuspocus / TipTap cloud) is
+ * host-supplied via `ctx.drivers.collaboration`. The module stays
+ * framework-agnostic: it just binds `@tiptap/extension-collaboration`
+ * to the host-provided Y.Doc and, when an awareness provider is
+ * available, layers `@tiptap/extension-collaboration-caret` on top.
+ */
+export const collaborationModule: EditorExtensionModule = {
+  id: "collaboration",
+  name: "Collaborative editing",
+  description:
+    "Binds @tiptap/extension-collaboration to a host-supplied CollaborationProvider (Yjs-based).",
+  enabled: (ctx) => !!ctx.drivers.collaboration,
+  tiptap: (ctx) => {
+    const factory = ctx.drivers.collaboration;
+    if (!factory) return [];
+    const provider = resolveProvider(factory, ctx.documentId);
+    if (!provider) return [];
+
+    const exts: AnyExtension[] = [
+      Collaboration.configure({ document: provider.ydoc }),
+    ];
+
+    if (provider.awarenessProvider) {
+      exts.push(
+        CollaborationCaret.configure({
+          provider: provider.awarenessProvider,
+          user: {
+            name: ctx.user.name,
+            color: ctx.user.color,
+            id: ctx.user.id,
+          },
+        }),
+      );
+    }
+
+    return exts;
+  },
+};
