@@ -3,31 +3,30 @@ import styles from "./page.module.css";
 
 export default function Page() {
   return (
-    <main className={styles.main}>
-      <header className={styles.header}>
-        <div>
+    <div className={styles.main}>
+      <header className={styles.hero}>
+        <div className={styles.heroInner}>
+          <div className={styles.badge}>@tiptap-playground/editor</div>
           <h1 className={styles.title}>TipTap Playground</h1>
           <p className={styles.subtitle}>
-            Demo host for <code>@tiptap-playground/editor</code>. Every
-            privileged action flows through a host-supplied
-            <code>PermissionPolicy</code>, <code>VersionStore</code>,
-            <code>AuditLog</code>, and optional collaboration /
-            signature drivers - the same editor can drop into any
-            React app without code changes.
+            A feature-rich document editor with collaboration, track changes,
+            locked blocks, versioning, and side-by-side diff — powered by{" "}
+            <code>@tiptap-playground/editor</code>. Every privileged action
+            flows through host-supplied drivers and a{" "}
+            <code>PermissionPolicy</code>.
           </p>
         </div>
       </header>
 
-      <section className={styles.editorSection}>
-        <EditorShell />
-      </section>
+      <div className={styles.body}>
+        <div className={styles.editorCard}>
+          <EditorShell />
+        </div>
+      </div>
 
       <footer className={styles.footer}>
-        Library lives in <code>packages/editor</code>; this app is the
-        demo harness. Core modules: collaborative editing, track
-        changes, versioning, locked / readonly / conditional blocks,
-        side-by-side diff.
+        Library in <code>packages/editor</code> · MIT License
       </footer>
-    </main>
+    </div>
   );
 }

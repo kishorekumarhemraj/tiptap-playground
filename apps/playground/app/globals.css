@@ -1,42 +1,93 @@
 :root {
+  /* Surface */
   --bg: #ffffff;
-  --bg-muted: #f7f7f5;
-  --fg: #2f2f2f;
-  --fg-muted: #787774;
-  --border: #e9e9e7;
-  --border-strong: #d3d1cb;
-  --accent: #2383e2;
-  --accent-soft: rgba(35, 131, 226, 0.14);
-  --danger: #e03e3e;
-  --warning: #d9730d;
-  --success: #0f7b6c;
-  --locked-bg: #fff7e6;
-  --locked-border: #f5c97a;
-  --readonly-bg: #f1f1ef;
-  --conditional-bg: #eaf5ff;
+  --bg-muted: #f8f8f6;
+  --bg-subtle: #f1f1ef;
+
+  /* Text */
+  --fg: #1a1a1a;
+  --fg-muted: #6b6b68;
+  --fg-faint: #a8a8a5;
+
+  /* Borders */
+  --border: #e8e8e5;
+  --border-strong: #d0cec8;
+
+  /* Accent */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.1);
+  --accent-soft-hover: rgba(37, 99, 235, 0.16);
+
+  /* Semantic */
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --warning: #d97706;
+  --success: #059669;
+  --success-soft: rgba(5, 150, 105, 0.08);
+
+  /* Locked blocks */
+  --locked-bg: #fffbeb;
+  --locked-border: #fbbf24;
+  --readonly-bg: #f4f4f2;
+  --conditional-bg: #eff6ff;
+
+  /* Typography */
   --font-sans:
     ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
     "Apple Color Emoji", Arial, sans-serif;
   --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    monospace;
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Transitions */
+  --transition-fast: 100ms ease;
+  --transition-normal: 150ms ease;
+  --transition-slow: 250ms ease;
+
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #191919;
-    --bg-muted: #202020;
-    --fg: #e6e6e6;
-    --fg-muted: #9b9b9b;
-    --border: #2d2d2d;
-    --border-strong: #3a3a3a;
-    --accent: #529cec;
-    --accent-soft: rgba(82, 156, 236, 0.2);
-    --locked-bg: #2a240f;
-    --locked-border: #7a5f1f;
-    --readonly-bg: #232323;
-    --conditional-bg: #152535;
+    --bg: #141414;
+    --bg-muted: #1e1e1e;
+    --bg-subtle: #272727;
+    --fg: #e8e8e8;
+    --fg-muted: #888885;
+    --fg-faint: #555553;
+    --border: #2a2a2a;
+    --border-strong: #383838;
+    --accent: #60a5fa;
+    --accent-hover: #93c5fd;
+    --accent-soft: rgba(96, 165, 250, 0.12);
+    --accent-soft-hover: rgba(96, 165, 250, 0.2);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.1);
+    --warning: #fbbf24;
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.1);
+    --locked-bg: #272214;
+    --locked-border: #92400e;
+    --readonly-bg: #1f1f1f;
+    --conditional-bg: #1a2540;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
     color-scheme: dark;
   }
 }
@@ -49,7 +100,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: var(--bg-muted);
   color: var(--fg);
   font-family: var(--font-sans);
   font-size: 16px;

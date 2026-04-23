@@ -1,50 +1,100 @@
 .main {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 48px 24px 96px;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 32px;
 }
 
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* ── Hero header ── */
+.hero {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 36px 48px 32px;
+}
+
+.heroInner {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+  margin-bottom: 14px;
 }
 
 .title {
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 700;
-  margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  margin: 0 0 8px;
 }
 
 .subtitle {
+  font-size: 14px;
   color: var(--fg-muted);
+  max-width: 68ch;
+  line-height: 1.65;
   margin: 0;
-  max-width: 70ch;
 }
 
 .subtitle code {
   font-family: var(--font-mono);
-  font-size: 0.9em;
+  font-size: 0.88em;
   background: var(--bg-muted);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 1px 5px;
 }
 
-.editorSection {
-  border: 1px solid var(--border);
-  border-radius: 12px;
+/* ── Main body ── */
+.body {
+  flex: 1;
+  padding: 28px 48px 48px;
+  max-width: calc(1040px + 96px);
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.editorCard {
   background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
+/* ── Footer ── */
 .footer {
-  font-size: 13px;
-  color: var(--fg-muted);
+  padding: 16px 48px;
+  font-size: 12px;
+  color: var(--fg-faint);
   border-top: 1px solid var(--border);
-  padding-top: 16px;
+  background: var(--bg);
+  text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .hero {
+    padding: 24px 20px 20px;
+  }
+
+  .body {
+    padding: 16px 12px 32px;
+  }
+
+  .footer {
+    padding: 14px 20px;
+  }
 }
