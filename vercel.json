@@ -1,0 +1,6 @@
+{
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @tiptap-playground/app build",
+  "outputDirectory": "apps/playground/.next",
+  "framework": "nextjs"
+}

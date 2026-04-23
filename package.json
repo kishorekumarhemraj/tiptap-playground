@@ -2,15 +2,12 @@
   "name": "tiptap-playground-monorepo",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "dev": "npm run dev --workspace apps/playground",
-    "build": "npm run build --workspace apps/playground",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "dev": "pnpm --filter @tiptap-playground/app dev",
+    "build": "pnpm --filter @tiptap-playground/app build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
