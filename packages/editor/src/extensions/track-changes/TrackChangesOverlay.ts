@@ -1,75 +1,206 @@
 import { Extension, type Editor } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
-import type { TrackChangesStorage } from "./trackChanges";
+import type { TrackChangesStorage, TrackChangesAuthor } from "./trackChanges";
 
 const STYLE_TAG_ID = "tpe-track-changes-style";
+
+/** All styles use design tokens from globals.css so they adapt to light/dark. */
 const STYLE_RULES = `
+/* ─── Active-mode banner ─────────────────────────────────────────────── */
 .tpe-tc-banner {
   position: fixed;
   z-index: 90;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px 6px 10px;
-  background: var(--accent-bg, #fff4d6);
-  border: 1px solid var(--accent-border, #e9c465);
-  border-radius: 999px;
-  color: var(--fg, #1f1f1c);
+  padding: 6px 14px 6px 10px;
+  background: var(--accent-soft, rgba(37,99,235,0.10));
+  border: 1px solid var(--accent, #2563eb);
+  border-radius: var(--radius-full, 9999px);
+  color: var(--fg, #1a1a1a);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: var(--shadow-sm, 0 2px 6px rgba(0,0,0,0.08));
+  font-family: var(--font-sans, sans-serif);
+  box-shadow: var(--shadow-md, 0 4px 6px rgba(0,0,0,0.07));
   pointer-events: none;
+  transition: opacity var(--transition-normal, 150ms ease);
 }
 .tpe-tc-banner[hidden] { display: none; }
+
 .tpe-tc-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--accent, #d48a0a);
-  box-shadow: 0 0 0 3px rgba(212, 138, 10, 0.22);
-  animation: tpe-tc-pulse 1.6s ease-in-out infinite;
+  background: var(--accent, #2563eb);
+  animation: tpe-tc-pulse 1.8s ease-in-out infinite;
 }
 @keyframes tpe-tc-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(212, 138, 10, 0.22); }
-  50%      { box-shadow: 0 0 0 7px rgba(212, 138, 10, 0.04); }
+  0%, 100% { box-shadow: 0 0 0 2px var(--accent-soft, rgba(37,99,235,0.15)); }
+  50%       { box-shadow: 0 0 0 6px transparent; }
 }
-.tpe-tc-banner-label { letter-spacing: 0.01em; }
+
+.tpe-tc-banner-label { letter-spacing: 0.01em; color: var(--accent, #2563eb); }
 .tpe-tc-banner-author { color: var(--fg-muted, #6b6b68); font-weight: 400; }
 
-.tpe-tc-tooltip {
-  position: absolute;
-  z-index: 60;
-  display: none;
-  max-width: 260px;
-  padding: 8px 10px;
-  background: var(--fg, #1f1f1c);
-  color: var(--bg, #fff);
-  border-radius: 6px;
-  box-shadow: var(--shadow-md, 0 8px 24px rgba(0,0,0,0.16));
-  font-size: 12px;
-  line-height: 1.4;
+/* ─── Mark colours in the document ──────────────────────────────────── */
+ins[data-track-change] {
+  text-decoration: underline;
+  text-decoration-color: var(--success, #059669);
+  text-underline-offset: 2px;
+  color: var(--success, #059669);
+  background: var(--success-soft, rgba(5,150,105,0.08));
+  border-radius: 2px;
+  cursor: pointer;
+}
+del[data-track-change] {
+  text-decoration: line-through;
+  text-decoration-color: var(--danger, #dc2626);
+  color: var(--danger, #dc2626);
+  background: var(--danger-soft, rgba(220,38,38,0.08));
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+/* ─── Change popover ─────────────────────────────────────────────────── */
+.tpe-tc-popover {
+  position: fixed;
+  z-index: 200;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 0;
+  background: var(--bg, #ffffff);
+  border: 1px solid var(--border, #e8e8e5);
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: var(--shadow-lg, 0 10px 15px rgba(0,0,0,0.08));
+  font-family: var(--font-sans, sans-serif);
+  font-size: 13px;
+  color: var(--fg, #1a1a1a);
+  overflow: hidden;
+  pointer-events: auto;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.tpe-tc-popover[data-visible="false"] {
+  opacity: 0;
+  transform: translateY(4px);
   pointer-events: none;
 }
-.tpe-tc-tooltip[data-visible="true"] { display: block; }
-.tpe-tc-tooltip-head {
+.tpe-tc-popover[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tpe-tc-popover-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border, #e8e8e5);
+}
+
+.tpe-tc-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tpe-tc-kind-badge[data-kind="insert"] {
+  background: var(--success-soft, rgba(5,150,105,0.10));
+  color: var(--success, #059669);
+  border: 1px solid var(--success, #059669);
+}
+.tpe-tc-kind-badge[data-kind="delete"] {
+  background: var(--danger-soft, rgba(220,38,38,0.08));
+  color: var(--danger, #dc2626);
+  border: 1px solid var(--danger, #dc2626);
+}
+
+.tpe-tc-popover-body {
+  padding: 8px 12px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tpe-tc-author-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-weight: 600;
-  margin-bottom: 2px;
+  font-weight: 500;
+  color: var(--fg, #1a1a1a);
 }
-.tpe-tc-tooltip-kind {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.tpe-tc-author-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-soft, rgba(37,99,235,0.12));
+  color: var(--accent, #2563eb);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.tpe-tc-tooltip-kind[data-kind="insert"] { background: rgba(88, 194, 121, 0.25); color: #7ee8a4; }
-.tpe-tc-tooltip-kind[data-kind="delete"] { background: rgba(244, 114, 114, 0.25); color: #ffb0b0; }
-.tpe-tc-tooltip-meta { color: rgba(255,255,255,0.7); }
+.tpe-tc-meta {
+  font-size: 11px;
+  color: var(--fg-muted, #6b6b68);
+}
+
+.tpe-tc-popover-actions {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px 10px;
+}
+.tpe-tc-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: var(--radius-md, 6px);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-sans, sans-serif);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--transition-fast, 100ms ease),
+              border-color var(--transition-fast, 100ms ease),
+              color var(--transition-fast, 100ms ease);
+  white-space: nowrap;
+}
+.tpe-tc-btn[data-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.tpe-tc-btn-accept {
+  background: var(--success-soft, rgba(5,150,105,0.08));
+  border-color: var(--success, #059669);
+  color: var(--success, #059669);
+}
+.tpe-tc-btn-accept:hover:not([data-disabled="true"]) {
+  background: var(--success, #059669);
+  color: #fff;
+}
+.tpe-tc-btn-reject {
+  background: var(--danger-soft, rgba(220,38,38,0.06));
+  border-color: var(--danger, #dc2626);
+  color: var(--danger, #dc2626);
+}
+.tpe-tc-btn-reject:hover:not([data-disabled="true"]) {
+  background: var(--danger, #dc2626);
+  color: #fff;
+}
+.tpe-tc-permission-note {
+  padding: 0 12px 10px;
+  font-size: 11px;
+  color: var(--fg-faint, #a8a8a5);
+  text-align: center;
+}
 `;
 
 function ensureStyles() {
@@ -82,29 +213,21 @@ function ensureStyles() {
 }
 
 const bannerPluginKey = new PluginKey("trackChangesBanner");
-const tooltipPluginKey = new PluginKey("trackChangesTooltip");
+const popoverPluginKey = new PluginKey("trackChangesPopover");
 
 function formatRelative(ts: number): string {
   const diff = Date.now() - ts;
   if (diff < 60_000) return "just now";
   if (diff < 3_600_000) {
     const m = Math.round(diff / 60_000);
-    return `${m} minute${m === 1 ? "" : "s"} ago`;
+    return `${m}m ago`;
   }
   if (diff < 86_400_000) {
     const h = Math.round(diff / 3_600_000);
-    return `${h} hour${h === 1 ? "" : "s"} ago`;
+    return `${h}h ago`;
   }
   const d = Math.round(diff / 86_400_000);
-  return `${d} day${d === 1 ? "" : "s"} ago`;
-}
-
-function formatAbsolute(ts: number): string {
-  try {
-    return new Date(ts).toLocaleString();
-  } catch {
-    return "";
-  }
+  return `${d}d ago`;
 }
 
 function escapeHtml(s: string): string {
@@ -120,26 +243,47 @@ function escapeHtml(s: string): string {
   });
 }
 
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+}
+
 /**
- * Surface-level UI for track-changes. Two small plugins:
- *   - a floating banner pinned to the top-right of the editor
- *     whenever `editor.storage.trackChanges.active` is true, so the
- *     author can't miss that edits are being recorded;
- *   - a hover tooltip on `<ins data-track-change>` / `<del>` runs
- *     showing who made the change and when.
- *
- * Rendering is kept out of React on purpose - the track-changes
- * story is editor-internal, and tying it to the host component tree
- * would make it harder to reuse in diff views or preview renderers.
+ * Check if the current actor can accept/reject a change made by changeAuthorId.
+ * Mirrors the logic in trackChanges.ts so the UI disables buttons proactively.
+ */
+function canActOnChange(
+  actor: TrackChangesAuthor | null,
+  changeAuthorId: string | null,
+): boolean {
+  if (!actor) return false;
+  const roles = actor.roles ?? [];
+  if (roles.length === 0) return true;
+  if (roles.includes("author")) return true;
+  return actor.id === changeAuthorId;
+}
+
+/**
+ * Surface-level UI for track-changes. Two plugins:
+ *   - a banner pinned to the top-right of the editor when tracking is on.
+ *   - a rich popover on `<ins>` / `<del>` marks with Accept / Reject
+ *     buttons that are role-gated (Authors can act on anyone's changes;
+ *     contributors/reviewers only on their own).
  */
 export const TrackChangesOverlay = Extension.create({
   name: "trackChangesOverlay",
 
   addProseMirrorPlugins() {
     const editor = this.editor;
-    return [bannerPlugin(editor), tooltipPlugin()];
+    return [bannerPlugin(editor), popoverPlugin(editor)];
   },
 });
+
+// ─── Banner plugin ──────────────────────────────────────────────────────────
 
 function bannerPlugin(editor: Editor): Plugin {
   return new Plugin({
@@ -153,11 +297,9 @@ function bannerPlugin(editor: Editor): Plugin {
       banner.setAttribute("aria-live", "polite");
       banner.innerHTML = `
 <span class="tpe-tc-dot" aria-hidden="true"></span>
-<span class="tpe-tc-banner-label">Track changes on</span>
+<span class="tpe-tc-banner-label">Tracking changes</span>
 <span class="tpe-tc-banner-author"></span>`;
 
-      // Append to body so the fixed banner is never clipped by a
-      // flex container or overflow:auto ancestor.
       document.body.appendChild(banner);
 
       const render = () => {
@@ -175,16 +317,12 @@ function bannerPlugin(editor: Editor): Plugin {
             : "";
         }
         if (active) {
-          // Pin banner 12px below + inside the top-right of the editor.
           const r = view.dom.getBoundingClientRect();
           banner.style.top = `${r.top + 12}px`;
           banner.style.right = `${window.innerWidth - r.right + 12}px`;
         }
       };
 
-      // Storage flips don't always coincide with a PM transaction
-      // (toggle reads/writes the storage object directly), so we
-      // subscribe to TipTap's transaction event AND poll gently.
       const onTx = () => render();
       editor.on("transaction", onTx);
       const interval = window.setInterval(render, 400);
@@ -202,49 +340,125 @@ function bannerPlugin(editor: Editor): Plugin {
   });
 }
 
-function tooltipPlugin(): Plugin {
+// ─── Popover plugin ─────────────────────────────────────────────────────────
+
+function popoverPlugin(editor: Editor): Plugin {
   return new Plugin({
-    key: tooltipPluginKey,
+    key: popoverPluginKey,
     view(view) {
       ensureStyles();
-      const tip = document.createElement("div");
-      tip.className = "tpe-tc-tooltip";
-      tip.setAttribute("data-visible", "false");
-      document.body.appendChild(tip);
+
+      const pop = document.createElement("div");
+      pop.className = "tpe-tc-popover";
+      pop.setAttribute("data-visible", "false");
+      document.body.appendChild(pop);
 
       let currentEl: HTMLElement | null = null;
+      let hideTimer: number | undefined;
+
+      // ── Helpers ───────────────────────────────────────────────────────
+
+      const getStorage = () =>
+        editor.storage.trackChanges as TrackChangesStorage | undefined;
+
+      const doHide = () => {
+        pop.setAttribute("data-visible", "false");
+        currentEl = null;
+      };
+
+      const scheduleHide = () => {
+        hideTimer = window.setTimeout(doHide, 200);
+      };
+
+      const cancelHide = () => {
+        if (hideTimer !== undefined) {
+          window.clearTimeout(hideTimer);
+          hideTimer = undefined;
+        }
+      };
+
+      // ── Render ────────────────────────────────────────────────────────
 
       const show = (el: HTMLElement) => {
+        cancelHide();
+        currentEl = el;
+
         const kindRaw = el.getAttribute("data-track-change");
         const kind = kindRaw === "delete" ? "delete" : "insert";
         const author = el.getAttribute("data-author") ?? "Unknown";
+        const authorId = el.getAttribute("data-author-id") ?? null;
+        const changeId = el.getAttribute("data-change-id") ?? null;
         const tsAttr = el.getAttribute("data-timestamp");
         const ts = tsAttr ? Number(tsAttr) : NaN;
-        const kindLabel = kind === "insert" ? "Inserted" : "Deleted";
-        const metaParts: string[] = [];
-        if (Number.isFinite(ts)) {
-          metaParts.push(formatRelative(ts));
-          metaParts.push(formatAbsolute(ts));
-        }
-        tip.innerHTML = `
-<div class="tpe-tc-tooltip-head">
-  <span class="tpe-tc-tooltip-kind" data-kind="${kind}">${kindLabel}</span>
-  <span>${escapeHtml(author)}</span>
+
+        const storage = getStorage();
+        const actor = storage?.author ?? null;
+        const canAct = canActOnChange(actor, authorId);
+        const hasRole =
+          !actor || (actor.roles ?? []).length === 0 || actor.roles?.includes("author");
+
+        const kindLabel = kind === "insert" ? "Insertion" : "Deletion";
+        const kindIcon = kind === "insert" ? "+" : "−";
+        const metaText = Number.isFinite(ts) ? formatRelative(ts) : "";
+
+        pop.innerHTML = `
+<div class="tpe-tc-popover-header">
+  <span class="tpe-tc-kind-badge" data-kind="${kind}">${kindIcon} ${escapeHtml(kindLabel)}</span>
 </div>
-${metaParts.length ? `<div class="tpe-tc-tooltip-meta">${escapeHtml(metaParts.join(" · "))}</div>` : ""}`;
+<div class="tpe-tc-popover-body">
+  <div class="tpe-tc-author-row">
+    <span class="tpe-tc-author-avatar">${escapeHtml(initials(author))}</span>
+    <span>${escapeHtml(author)}</span>
+  </div>
+  ${metaText ? `<div class="tpe-tc-meta">${escapeHtml(metaText)}</div>` : ""}
+</div>
+<div class="tpe-tc-popover-actions">
+  <button class="tpe-tc-btn tpe-tc-btn-accept" data-change-id="${escapeHtml(changeId ?? "")}" data-disabled="${canAct ? "false" : "true"}" title="${canAct ? "Accept this change" : "Only authors can accept others' changes"}">✓ Accept</button>
+  <button class="tpe-tc-btn tpe-tc-btn-reject" data-change-id="${escapeHtml(changeId ?? "")}" data-disabled="${canAct ? "false" : "true"}" title="${canAct ? "Reject this change" : "Only authors can reject others' changes"}">✕ Reject</button>
+</div>
+${!canAct ? `<div class="tpe-tc-permission-note">Authors can accept/reject all changes</div>` : ""}
+`;
 
+        // Wire up buttons
+        const acceptBtn = pop.querySelector<HTMLButtonElement>(".tpe-tc-btn-accept");
+        const rejectBtn = pop.querySelector<HTMLButtonElement>(".tpe-tc-btn-reject");
+
+        acceptBtn?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (acceptBtn.getAttribute("data-disabled") === "true") return;
+          if (changeId) {
+            editor.chain().focus().acceptChange(changeId).run();
+          }
+          doHide();
+        });
+
+        rejectBtn?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (rejectBtn.getAttribute("data-disabled") === "true") return;
+          if (changeId) {
+            editor.chain().focus().rejectChange(changeId).run();
+          }
+          doHide();
+        });
+
+        // Position: prefer below the mark, flip above if clipped
         const rect = el.getBoundingClientRect();
-        const top = rect.bottom + window.scrollY + 6;
-        const left = rect.left + window.scrollX;
-        tip.style.top = `${top}px`;
-        tip.style.left = `${left}px`;
-        tip.setAttribute("data-visible", "true");
+        const popH = 160; // rough height estimate before render
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const top =
+          spaceBelow >= popH + 10
+            ? rect.bottom + window.scrollY + 6
+            : rect.top + window.scrollY - popH - 6;
+        const left = Math.min(
+          rect.left + window.scrollX,
+          window.innerWidth - 340,
+        );
+        pop.style.top = `${Math.max(4, top)}px`;
+        pop.style.left = `${Math.max(4, left)}px`;
+        pop.setAttribute("data-visible", "true");
       };
 
-      const hide = () => {
-        tip.setAttribute("data-visible", "false");
-        currentEl = null;
-      };
+      // ── Event wiring ─────────────────────────────────────────────────
 
       const onOver = (event: MouseEvent) => {
         const target = event.target as HTMLElement | null;
@@ -252,24 +466,41 @@ ${metaParts.length ? `<div class="tpe-tc-tooltip-meta">${escapeHtml(metaParts.jo
           "ins[data-track-change], del[data-track-change]",
         );
         if (!el) {
-          if (currentEl) hide();
+          if (currentEl && !pop.contains(target)) scheduleHide();
           return;
         }
-        if (el === currentEl) return;
-        currentEl = el;
+        if (el === currentEl) {
+          cancelHide();
+          return;
+        }
         show(el);
       };
 
-      const onLeave = () => hide();
+      const onLeave = (event: MouseEvent) => {
+        const related = event.relatedTarget as HTMLElement | null;
+        if (pop.contains(related)) {
+          cancelHide();
+          return;
+        }
+        scheduleHide();
+      };
+
+      const onPopOver = () => cancelHide();
+      const onPopLeave = () => scheduleHide();
 
       view.dom.addEventListener("mouseover", onOver);
       view.dom.addEventListener("mouseleave", onLeave);
+      pop.addEventListener("mouseover", onPopOver);
+      pop.addEventListener("mouseleave", onPopLeave);
 
       return {
         destroy() {
           view.dom.removeEventListener("mouseover", onOver);
           view.dom.removeEventListener("mouseleave", onLeave);
-          tip.remove();
+          pop.removeEventListener("mouseover", onPopOver);
+          pop.removeEventListener("mouseleave", onPopLeave);
+          if (hideTimer !== undefined) window.clearTimeout(hideTimer);
+          pop.remove();
         },
       };
     },

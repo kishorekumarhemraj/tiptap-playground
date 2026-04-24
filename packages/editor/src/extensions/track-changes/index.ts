@@ -29,7 +29,7 @@ export const trackChangesModule: EditorExtensionModule = {
   id: "track-changes",
   name: "Track changes",
   description:
-    "Insertion/deletion marks plus an MS-Word-style proposal/accept/reject flow, gated on PermissionPolicy.",
+    "Insertion/deletion marks with individual & bulk accept/reject, smart deletion, and role-based gating.",
   tiptap: (ctx) => {
     const cfg = getConfig(ctx.features);
     return [
@@ -38,7 +38,11 @@ export const trackChangesModule: EditorExtensionModule = {
       TrackChangesOverlay,
       TrackChanges.configure({
         defaultActive: cfg.defaultActive ?? false,
-        author: { id: ctx.user.id, name: ctx.user.name },
+        author: {
+          id: ctx.user.id,
+          name: ctx.user.name,
+          roles: ctx.user.roles,
+        },
         policy: ctx.policy,
         getPolicyContext: policyContextFromCtx(ctx),
         events: ctx.events,
@@ -58,15 +62,15 @@ export const trackChangesModule: EditorExtensionModule = {
     {
       kind: "button",
       id: "acceptAll",
-      label: "✓ Accept",
-      title: "Accept all changes",
+      label: "✓ Accept all",
+      title: "Accept all tracked changes",
       onRun: (editor) => editor.chain().focus().acceptAllChanges().run(),
     },
     {
       kind: "button",
       id: "rejectAll",
-      label: "✗ Reject",
-      title: "Reject all changes",
+      label: "✕ Reject all",
+      title: "Reject all tracked changes",
       onRun: (editor) => editor.chain().focus().rejectAllChanges().run(),
     },
   ],

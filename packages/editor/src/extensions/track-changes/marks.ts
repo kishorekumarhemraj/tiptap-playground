@@ -4,6 +4,8 @@ export interface ChangeAttrs {
   author: string | null;
   authorId: string | null;
   timestamp: number | null;
+  /** Unique ID per change-run, used for individual accept / reject. */
+  changeId: string | null;
 }
 
 const renderAttrs = (attrs: ChangeAttrs): Record<string, string> => {
@@ -11,6 +13,7 @@ const renderAttrs = (attrs: ChangeAttrs): Record<string, string> => {
   if (attrs.author) out["data-author"] = attrs.author;
   if (attrs.authorId) out["data-author-id"] = attrs.authorId;
   if (attrs.timestamp) out["data-timestamp"] = String(attrs.timestamp);
+  if (attrs.changeId) out["data-change-id"] = attrs.changeId;
   return out;
 };
 
@@ -23,6 +26,7 @@ export const Insertion = Mark.create({
       author: { default: null },
       authorId: { default: null },
       timestamp: { default: null },
+      changeId: { default: null },
     };
   },
   parseHTML() {
@@ -50,6 +54,7 @@ export const Deletion = Mark.create({
       author: { default: null },
       authorId: { default: null },
       timestamp: { default: null },
+      changeId: { default: null },
     };
   },
   parseHTML() {
