@@ -38,25 +38,7 @@ interface BlockHandleState {
 
 const STYLE_TAG_ID = "tpe-block-handle-style";
 const STYLE_RULES = `
-/* ── Lock marker (gutter icon on locked blocks) ─────────────────────── */
-.tpe-block-marker {
-  position: absolute;
-  top: 0.25em;
-  left: -1.6em;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25em;
-  height: 1.25em;
-  color: var(--lock-accent);
-  opacity: 0;
-  cursor: help;
-  user-select: none;
-  transition: opacity 120ms ease;
-  pointer-events: auto;
-}
-/* Show colorful icon when the block is hovered */
-[data-block-hover] .tpe-block-marker { opacity: 1; }
+/* tpe-block-marker removed: no longer showing icons in normal state */
 
 /* ── Hover cluster ──────────────────────────────────────────────────── */
 .tpe-block-cluster {
@@ -98,17 +80,22 @@ const STYLE_RULES = `
 .tpe-block-lock-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  width: 20px;
   height: 20px;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--bg-subtle, #f2f2ef);
-  color: var(--lock-accent, #737373);
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
+  background: transparent;
+  cursor: help;
 }
-.tpe-block-lock-chip svg { width: 12px; height: 12px; }
+.tpe-block-lock-chip[data-mode="locked"] {
+  color: var(--warning, #d97706);
+}
+.tpe-block-lock-chip[data-mode="readonly"] {
+  color: var(--fg-faint, #a8a8a5);
+}
+.tpe-block-lock-chip[data-mode="conditional"] {
+  color: var(--accent, #2563eb);
+}
+.tpe-block-lock-chip svg { width: 14px; height: 14px; }
 `;
 
 function ensureStyles() {
@@ -140,10 +127,9 @@ export const BlockHandle = Extension.create<BlockHandleOptions>({
   addOptions() {
     return {
       // offsetLeft: distance in px from the block's left edge to the
-      // marker's left edge (≈ 1.6em at 15px base). The cluster's right
-      // edge aligns here; the cluster itself extends further left via
-      // translateX(-100%) so the two gutter elements form one strip.
-      offsetLeft: 24,
+      // right edge of the cluster. Reduced to 8px so the icons sit
+      // closely to the block content.
+      offsetLeft: 8,
       offsetTop: 2,
     };
   },
@@ -243,15 +229,13 @@ function createBlockHandlePlugin(
           return;
         }
         const lock = getLockDescriptor(target.node);
-        const isLocked =
-          lock?.mode === "locked" || lock?.mode === "readonly";
+        const isLocked = lock !== null;
 
         // Visibility matrix:
-        //   template + any:    insert + drag + instruction  (no lock chip)
-        //   document + locked: lock chip only
-        //   document + other:  nothing - editable text only
+        //   template:  insert + drag + instruction + lock chip
+        //   document:  lock chip only (if locked)
         const showAuthorButtons = mode === "template";
-        const showLockChip = mode === "document" && isLocked;
+        const showLockChip = isLocked;
         const showAnything = showAuthorButtons || showLockChip;
 
         plusBtn.style.display = showAuthorButtons ? "inline-flex" : "none";
@@ -268,9 +252,8 @@ function createBlockHandlePlugin(
         }
 
         if (showLockChip && lock) {
-          lockChip.innerHTML = `${lockSvg(lock.mode)}<span>${
-            lock.mode === "readonly" ? "Read-only" : "Locked"
-          }</span>`;
+          lockChip.innerHTML = lockSvg(lock.mode);
+          lockChip.setAttribute("data-mode", lock.mode);
           lockChip.title =
             lock.reason ??
             (lock.mode === "readonly"
