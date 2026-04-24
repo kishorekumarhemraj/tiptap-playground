@@ -107,8 +107,10 @@ export function LockedBlockView({ node, editor, updateAttributes }: NodeViewProp
       data-editor-mode={editorMode}
       className={styles.wrapper}
     >
+      {/* tpe-block-marker is a global class so BlockHandle can target and
+          fade this icon when the hover cluster is active over this block. */}
       <span
-        className={styles.marker}
+        className="tpe-block-marker"
         contentEditable={false}
         title={tooltip}
         aria-label={tooltip}

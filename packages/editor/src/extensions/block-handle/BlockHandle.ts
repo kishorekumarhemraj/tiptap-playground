@@ -38,6 +38,29 @@ interface BlockHandleState {
 
 const STYLE_TAG_ID = "tpe-block-handle-style";
 const STYLE_RULES = `
+/* ── Lock marker (always-visible gutter icon on locked blocks) ──────── */
+.tpe-block-marker {
+  position: absolute;
+  top: 0.25em;
+  left: -1.6em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25em;
+  height: 1.25em;
+  color: var(--lock-accent);
+  opacity: 0.55;
+  cursor: help;
+  user-select: none;
+  transition: opacity 100ms ease;
+  pointer-events: auto;
+}
+/* Full opacity on wrapper hover */
+[data-node-view-wrapper]:hover .tpe-block-marker { opacity: 1; }
+/* Fade when the hover cluster is active over this block */
+[data-block-hover] .tpe-block-marker { opacity: 0.15; }
+
+/* ── Hover cluster ──────────────────────────────────────────────────── */
 .tpe-block-cluster {
   position: fixed;
   display: none;
@@ -47,7 +70,6 @@ const STYLE_RULES = `
   z-index: 100;
   user-select: none;
   line-height: 1;
-  pointer-events: auto;
 }
 .tpe-block-cluster[data-visible="true"] { display: inline-flex; }
 .tpe-block-btn {
@@ -119,7 +141,11 @@ export const BlockHandle = Extension.create<BlockHandleOptions>({
 
   addOptions() {
     return {
-      offsetLeft: 32,
+      // offsetLeft: distance in px from the block's left edge to the
+      // marker's left edge (≈ 1.6em at 15px base). The cluster's right
+      // edge aligns here; the cluster itself extends further left via
+      // translateX(-100%) so the two gutter elements form one strip.
+      offsetLeft: 24,
       offsetTop: 2,
     };
   },
@@ -197,14 +223,25 @@ function createBlockHandlePlugin(
       const scrollHost = view.dom.parentElement ?? document.body;
 
       let hideTimer: number | null = null;
+      let activeBlockDom: HTMLElement | null = null;
 
       const setTarget = (target: TargetBlock | null) => {
         view.dispatch(view.state.tr.setMeta(blockHandleKey, { target }));
       };
 
+      // Manage data-block-hover on the block element so the always-visible
+      // .tpe-block-marker fades when the cluster takes over that gutter column.
+      const setHoverDom = (dom: HTMLElement | null) => {
+        if (activeBlockDom === dom) return;
+        if (activeBlockDom) activeBlockDom.removeAttribute("data-block-hover");
+        activeBlockDom = dom;
+        if (dom) dom.setAttribute("data-block-hover", "true");
+      };
+
       const positionCluster = (target: TargetBlock | null) => {
         if (!target) {
           cluster.setAttribute("data-visible", "false");
+          setHoverDom(null);
           return;
         }
         const lock = getLockDescriptor(target.node);
@@ -228,6 +265,7 @@ function createBlockHandlePlugin(
 
         if (!showAnything) {
           cluster.setAttribute("data-visible", "false");
+          setHoverDom(null);
           return;
         }
 
@@ -254,7 +292,7 @@ function createBlockHandlePlugin(
         }
 
         // The cluster uses position:fixed so coordinates are viewport-space.
-        // Vertically we centre the icon row on the block's first text line.
+        // Vertically centre the icon row on the block's first text line.
         const blockRect = target.dom.getBoundingClientRect();
         const iconHeight = 20;
         const lineH =
@@ -263,14 +301,24 @@ function createBlockHandlePlugin(
           ) || iconHeight;
         const vCentre = Math.max(0, (lineH - iconHeight) / 2);
         cluster.style.top = `${blockRect.top + vCentre}px`;
-        cluster.style.left = `${blockRect.left - (options.offsetLeft ?? 56)}px`;
+        // Align the cluster's RIGHT edge with the marker's LEFT edge so
+        // the two gutter elements form one continuous strip:
+        //   marker left ≈ blockRect.left − 1.6em (≈ 24px at 15px base)
+        //   cluster right = blockRect.left − markerOffset
+        //   cluster left  = blockRect.left − markerOffset − clusterWidth
+        // We keep markerOffset at the offsetLeft default (24px) and let
+        // the cluster extend further left from there.
+        const markerOffset = options.offsetLeft ?? 24;
+        cluster.style.left = `${blockRect.left - markerOffset}px`;
+        cluster.style.transform = "translateX(-100%)";
         cluster.setAttribute("data-visible", "true");
+        setHoverDom(target.dom);
       };
 
       // GUTTER_PX: how many pixels to the LEFT of the editor surface
-      // we still track the mouse. Must cover the cluster's width so
-      // moving over the + / drag / 💡 buttons still tracks the block.
-      const GUTTER_PX = (options.offsetLeft ?? 56) + 8;
+      // we still track the mouse. Cluster extends markerOffset + ~70px
+      // (3 buttons × 20px + gaps) left of the block's content edge.
+      const GUTTER_PX = (options.offsetLeft ?? 24) + 80;
 
       const onGlobalMouseMove = (event: MouseEvent) => {
         const editorRect = view.dom.getBoundingClientRect();
@@ -393,6 +441,7 @@ function createBlockHandlePlugin(
           dragBtn.removeEventListener("click", onDragClick);
           plusBtn.removeEventListener("click", onPlusClick);
           instructionBtn.removeEventListener("click", onInstructionClick);
+          setHoverDom(null);
           cluster.remove();
           if (hideTimer) window.clearTimeout(hideTimer);
         },
