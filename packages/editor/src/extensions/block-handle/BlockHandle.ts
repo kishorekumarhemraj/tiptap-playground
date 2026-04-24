@@ -374,11 +374,11 @@ function createBlockHandlePlugin(
         const instruction =
           typeof window !== "undefined"
             ? (
-                window.prompt(
-                  "Instruction for this block (optional - leave empty for none)",
-                  "",
-                ) ?? ""
-              ).trim()
+              window.prompt(
+                "Instruction for this block (optional - leave empty for none)",
+                "",
+              ) ?? ""
+            ).trim()
             : "";
         insertParagraphAfter(view, target, instruction || null);
         view.focus();
