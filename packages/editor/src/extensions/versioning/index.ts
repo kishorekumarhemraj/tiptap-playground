@@ -9,6 +9,7 @@ function policyContextFromCtx(ctx: EditorExtensionContext) {
     user: ctx.user,
     documentId: ctx.documentId,
     claims: ctx.claims,
+    mode: ctx.mode,
   });
 }
 

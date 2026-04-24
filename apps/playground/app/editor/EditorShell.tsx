@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
+import type { JSONContent } from "@tiptap/core";
 import {
   defaultExtensionModules,
   defaultPermissionPolicy,
   createEventBus,
   type EditorExtensionContext,
+  type EditorMode,
   type VersionSnapshot,
 } from "@tiptap-playground/editor";
 import {
@@ -40,6 +42,7 @@ const DEFAULT_CONTENT = `
 
 export function EditorShell() {
   const [readOnly, setReadOnly] = useState(false);
+  const [mode, setMode] = useState<EditorMode>("template");
   const [editor, setEditor] = useState<TiptapEditor | null>(null);
   const [diffSelection, setDiffSelection] = useState<{
     left: string | null;
@@ -49,6 +52,16 @@ export function EditorShell() {
     left: DiffPaneVersion;
     right: DiffPaneVersion;
   } | null>(null);
+
+  // Persist the current document across context rebuilds. When the
+  // user toggles Template <-> Document we want the Editor to pick up
+  // the new policy / mode wiring but keep whatever the user just
+  // wrote. The ref holds the latest JSON and is read as
+  // `initialContent` every time the Editor remounts.
+  const latestJsonRef = useRef<JSONContent | string>(DEFAULT_CONTENT);
+  const handleUpdateJSON = useCallback((json: JSONContent) => {
+    latestJsonRef.current = json;
+  }, []);
 
   // Every concern the editor needs is assembled in one place: user,
   // drivers, policy, event bus. This mirrors how a real host app
@@ -80,13 +93,14 @@ export function EditorShell() {
         roles: ["author"],
       },
       readOnly,
+      mode,
       features: {},
       claims: {},
       drivers,
       policy,
       events,
     };
-  }, [readOnly]);
+  }, [readOnly, mode]);
 
   const handleEditor = useCallback((next: TiptapEditor | null) => {
     setEditor(next);
@@ -98,6 +112,34 @@ export function EditorShell() {
     <div className={styles.shell}>
       <div className={styles.controls}>
         <div className={styles.controlsLeft}>
+          <div
+            className={styles.segmented}
+            role="radiogroup"
+            aria-label="Editor mode"
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={mode === "template"}
+              className={styles.segmentedButton}
+              data-active={mode === "template"}
+              onClick={() => setMode("template")}
+              title="Author a template: locks can be set, changed, moved"
+            >
+              Template
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={mode === "document"}
+              className={styles.segmentedButton}
+              data-active={mode === "document"}
+              onClick={() => setMode("document")}
+              title="Document from template: locked blocks are read-only and immovable"
+            >
+              Document
+            </button>
+          </div>
           <label className={styles.toggleLabel}>
             <span className={styles.switchWrapper}>
               <input
@@ -130,8 +172,9 @@ export function EditorShell() {
           <Editor
             modules={defaultExtensionModules}
             context={context}
-            initialContent={DEFAULT_CONTENT}
+            initialContent={latestJsonRef.current}
             onEditor={handleEditor}
+            onUpdateJSON={handleUpdateJSON}
           />
         </div>
         <VersionsPanel

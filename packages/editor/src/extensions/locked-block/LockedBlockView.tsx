@@ -5,7 +5,7 @@ import {
   NodeViewWrapper,
   type NodeViewProps,
 } from "@tiptap/react";
-import type { LockMode } from "./LockedBlock";
+import type { LockMode, LockedBlockStorage } from "./LockedBlock";
 import styles from "./LockedBlockView.module.css";
 
 const modeLabel: Record<LockMode, string> = {
@@ -86,7 +86,13 @@ export function LockedBlockView({ node, editor, updateAttributes }: NodeViewProp
   const reason = node.attrs.reason as string | null;
   const condition = node.attrs.condition as string | null;
   const lockedBy = node.attrs.lockedBy as string | null;
-  const canEdit = editor.isEditable;
+  const storage = (editor.storage as { lockedBlock?: LockedBlockStorage })
+    .lockedBlock;
+  const editorMode = storage?.editorMode ?? "document";
+  // The lock-mode selector is an authoring affordance. Hide it in
+  // document mode — the guard would reject the change anyway, and
+  // the UI should match the policy.
+  const showControls = editor.isEditable && editorMode === "template";
 
   const tooltipParts = [modeLabel[mode]];
   if (lockedBy) tooltipParts.push(`by ${lockedBy}`);
@@ -95,7 +101,12 @@ export function LockedBlockView({ node, editor, updateAttributes }: NodeViewProp
   const tooltip = tooltipParts.join(" · ");
 
   return (
-    <NodeViewWrapper as="div" data-mode={mode} className={styles.wrapper}>
+    <NodeViewWrapper
+      as="div"
+      data-mode={mode}
+      data-editor-mode={editorMode}
+      className={styles.wrapper}
+    >
       <span
         className={styles.marker}
         contentEditable={false}
@@ -105,7 +116,7 @@ export function LockedBlockView({ node, editor, updateAttributes }: NodeViewProp
         <LockIcon mode={mode} />
       </span>
       <NodeViewContent className={styles.content} />
-      {canEdit && (
+      {showControls && (
         <span className={styles.controls} contentEditable={false}>
           <select
             className={styles.modeSelect}
