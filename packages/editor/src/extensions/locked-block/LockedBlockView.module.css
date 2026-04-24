@@ -16,25 +16,9 @@
   --lock-accent: var(--accent, #2563eb);
 }
 
-.marker {
-  position: absolute;
-  top: 0.25em;
-  left: -1.6em;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25em;
-  height: 1.25em;
-  color: var(--lock-accent);
-  opacity: 0.55;
-  cursor: help;
-  user-select: none;
-  transition: opacity var(--transition-fast, 100ms ease);
-}
-
-.wrapper:hover .marker {
-  opacity: 1;
-}
+/* .tpe-block-marker styles are injected globally by the BlockHandle
+   extension so it can co-ordinate fade-out when the hover cluster
+   takes over the same gutter column. */
 
 .content {
   /* Content flows as if part of the surrounding document — no

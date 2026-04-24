@@ -23,6 +23,38 @@
   gap: 12px;
 }
 
+/* Segmented mode control */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+}
+
+.segmentedButton {
+  appearance: none;
+  border: none;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  background: transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.segmentedButton:hover {
+  color: var(--fg);
+}
+
+.segmentedButton[data-active="true"] {
+  background: var(--accent);
+  color: white;
+}
+
 .controlsRight {
   display: flex;
   align-items: center;

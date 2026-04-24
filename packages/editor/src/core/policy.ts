@@ -1,4 +1,5 @@
 import type { LockMode } from "../extensions/locked-block/LockedBlock";
+import type { EditorMode } from "./types";
 
 export interface EditorUser {
   id: string;
@@ -34,6 +35,12 @@ export interface PolicyContext {
   documentId: string;
   /** Arbitrary host claims (feature flags, document metadata, etc.). */
   claims?: Record<string, unknown>;
+  /**
+   * Template authoring vs. document consumption. The default policy
+   * uses this to decide whether lock-bearing actions (set lock,
+   * change mode, move a locked block) are allowed.
+   */
+  mode: EditorMode;
 }
 
 /**
@@ -66,6 +73,14 @@ export interface PermissionPolicy {
       target: LockedBlockDescriptor;
     },
   ): PolicyDecision;
+  /**
+   * Gate for moving (drag/drop, cut, indent) a *locked* block to a
+   * different position. Content-level edits inside the block still
+   * go through `canEditBlock`.
+   */
+  canMoveBlock(
+    ctx: PolicyContext & { block: LockedBlockDescriptor },
+  ): PolicyDecision;
 
   canToggleTrackChanges(ctx: PolicyContext): PolicyDecision;
   canAcceptChanges(ctx: PolicyContext): PolicyDecision;
@@ -96,9 +111,14 @@ const ALLOW: PolicyDecision = { allowed: true };
  * Default policy - permissive with reasonable defaults for a local
  * playground. Regulated hosts should supply their own.
  *
- * - Hard-locked blocks and read-only blocks reject edits.
- * - Conditional blocks reject edits unless an `evaluator` opts them in.
- * - Everything else is allowed.
+ * Mode drives the defaults:
+ * - `template`: authors shape the template. Locked/readonly blocks
+ *   are still editable and the lock itself can be set, cleared,
+ *   changed, or moved. This lets the author draft locked sections.
+ * - `document`: consumers fill in a document instantiated from a
+ *   template. Locked / read-only blocks reject edits and moves,
+ *   and the lock itself cannot be toggled.
+ * Conditional blocks defer to `evaluateCondition` in both modes.
  */
 export function defaultPermissionPolicy(overrides: {
   evaluateCondition?: (expression: string, ctx: PolicyContext) => boolean;
@@ -106,9 +126,15 @@ export function defaultPermissionPolicy(overrides: {
   const evaluate =
     overrides.evaluateCondition ?? (() => false);
 
+  const templateOnly = (action: string): PolicyDecision => ({
+    allowed: false,
+    reason: `${action} is only available while authoring a template`,
+  });
+
   return {
     canEditDocument: () => ALLOW,
-    canEditBlock: ({ block, ...rest }) => {
+    canEditBlock: ({ block, mode, ...rest }) => {
+      if (mode === "template") return ALLOW;
       if (block.mode === "locked") {
         return { allowed: false, reason: block.reason ?? "Block is locked" };
       }
@@ -117,7 +143,12 @@ export function defaultPermissionPolicy(overrides: {
       }
       if (block.mode === "conditional") {
         const ok = block.condition
-          ? evaluate(block.condition, { user: rest.user, documentId: rest.documentId, claims: rest.claims })
+          ? evaluate(block.condition, {
+              user: rest.user,
+              documentId: rest.documentId,
+              claims: rest.claims,
+              mode,
+            })
           : false;
         return ok
           ? ALLOW
@@ -128,9 +159,22 @@ export function defaultPermissionPolicy(overrides: {
       }
       return ALLOW;
     },
-    canSetLock: () => ALLOW,
-    canUnlock: () => ALLOW,
-    canChangeLockMode: () => ALLOW,
+    canSetLock: ({ mode }) =>
+      mode === "template" ? ALLOW : templateOnly("Locking a block"),
+    canUnlock: ({ mode }) =>
+      mode === "template" ? ALLOW : templateOnly("Unlocking a block"),
+    canChangeLockMode: ({ mode }) =>
+      mode === "template" ? ALLOW : templateOnly("Changing lock mode"),
+    canMoveBlock: ({ block, mode }) => {
+      if (mode === "template") return ALLOW;
+      if (block.mode === "locked" || block.mode === "readonly") {
+        return {
+          allowed: false,
+          reason: "Locked blocks cannot be moved in a document",
+        };
+      }
+      return ALLOW;
+    },
     canToggleTrackChanges: () => ALLOW,
     canAcceptChanges: () => ALLOW,
     canRejectChanges: () => ALLOW,

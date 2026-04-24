@@ -4,6 +4,7 @@ import type {
 } from "../../core/types";
 import { Insertion, Deletion } from "./marks";
 import { TrackChanges } from "./trackChanges";
+import { TrackChangesOverlay } from "./TrackChangesOverlay";
 
 export interface TrackChangesFeatureConfig {
   defaultActive?: boolean;
@@ -20,6 +21,7 @@ function policyContextFromCtx(ctx: EditorExtensionContext) {
     user: ctx.user,
     documentId: ctx.documentId,
     claims: ctx.claims,
+    mode: ctx.mode,
   });
 }
 
@@ -33,6 +35,7 @@ export const trackChangesModule: EditorExtensionModule = {
     return [
       Insertion,
       Deletion,
+      TrackChangesOverlay,
       TrackChanges.configure({
         defaultActive: cfg.defaultActive ?? false,
         author: { id: ctx.user.id, name: ctx.user.name },
@@ -71,3 +74,4 @@ export const trackChangesModule: EditorExtensionModule = {
 
 export * from "./marks";
 export * from "./trackChanges";
+export * from "./TrackChangesOverlay";

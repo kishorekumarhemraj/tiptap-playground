@@ -4,6 +4,7 @@ import { LockedBlockView } from "./LockedBlockView";
 import type { PermissionPolicy, PolicyContext } from "../../core/policy";
 import type { EditorEventBus } from "../../core/events";
 import type { AuditLog } from "../../drivers/audit-log";
+import type { EditorMode } from "../../core/types";
 
 export type LockMode = "locked" | "readonly" | "conditional";
 
@@ -19,6 +20,16 @@ export interface LockedBlockOptions {
   getPolicyContext?: () => PolicyContext;
   events?: EditorEventBus;
   audit?: AuditLog;
+  /**
+   * Editor-level mode. Mirrored into `editor.storage.lockedBlock.editorMode`
+   * so the NodeView (and any host UI) can render template- vs document-
+   * specific affordances without re-reading the full context.
+   */
+  editorMode?: EditorMode;
+}
+
+export interface LockedBlockStorage {
+  editorMode: EditorMode;
 }
 
 declare module "@tiptap/core" {
@@ -74,6 +85,10 @@ export const LockedBlock = Node.create<LockedBlockOptions>({
 
   addOptions() {
     return {};
+  },
+
+  addStorage(): LockedBlockStorage {
+    return { editorMode: this.options.editorMode ?? "document" };
   },
 
   addAttributes() {

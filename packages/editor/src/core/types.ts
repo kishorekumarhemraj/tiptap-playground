@@ -12,6 +12,23 @@ import type { EditorEventBus } from "./events";
 export type { EditorUser } from "./policy";
 
 /**
+ * Document lifecycle mode.
+ *
+ * - `template` — authoring a reusable template. Every block can be
+ *   edited, reordered, locked, unlocked, or have its lock mode
+ *   changed. Consumers never see the editor in this mode.
+ * - `document` — a document instantiated from a template. Locked
+ *   blocks are read-only and immovable; unlocked blocks behave
+ *   normally. Authors cannot toggle locks.
+ *
+ * The mode flows through `PolicyContext` so the host policy can
+ * still override (e.g. an admin role that can edit locked blocks
+ * in document mode). The default policy enforces the contract
+ * above.
+ */
+export type EditorMode = "template" | "document";
+
+/**
  * Drivers supplied by the host. Every privileged concern (auth,
  * persistence, telemetry, signatures, transport) flows through one
  * of these so the editor stays portable across apps.
@@ -33,6 +50,12 @@ export interface EditorExtensionContext {
   documentId: string;
   user: EditorUser;
   readOnly: boolean;
+  /**
+   * Template authoring vs. document consumption. Defaults to
+   * `document` — the safer assumption for consumers. Template
+   * authors explicitly opt in.
+   */
+  mode: EditorMode;
   /**
    * Per-feature config bag. Feature modules should narrow the type
    * they expect via a type guard so unrelated settings don't leak.

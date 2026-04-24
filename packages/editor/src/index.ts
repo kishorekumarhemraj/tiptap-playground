@@ -17,6 +17,7 @@ export type {
   EditorExtensionContext,
   EditorExtensionModule,
   EditorDrivers,
+  EditorMode,
   ToolbarItem,
   ToolbarButton,
   ToolbarDivider,
