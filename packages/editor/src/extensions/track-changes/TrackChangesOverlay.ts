@@ -5,10 +5,8 @@ import type { TrackChangesStorage } from "./trackChanges";
 const STYLE_TAG_ID = "tpe-track-changes-style";
 const STYLE_RULES = `
 .tpe-tc-banner {
-  position: absolute;
-  top: 12px;
-  right: 20px;
-  z-index: 30;
+  position: fixed;
+  z-index: 90;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -158,13 +156,9 @@ function bannerPlugin(editor: Editor): Plugin {
 <span class="tpe-tc-banner-label">Track changes on</span>
 <span class="tpe-tc-banner-author"></span>`;
 
-      // Attach to the host (parent of ProseMirror DOM). Force a
-      // positioning context so the absolute banner pins cleanly.
-      const host = view.dom.parentElement ?? document.body;
-      if (getComputedStyle(host).position === "static") {
-        host.style.position = "relative";
-      }
-      host.appendChild(banner);
+      // Append to body so the fixed banner is never clipped by a
+      // flex container or overflow:auto ancestor.
+      document.body.appendChild(banner);
 
       const render = () => {
         const storage = editor.storage.trackChanges as
@@ -179,6 +173,12 @@ function bannerPlugin(editor: Editor): Plugin {
           authorEl.textContent = storage?.author
             ? `· ${storage.author.name}`
             : "";
+        }
+        if (active) {
+          // Pin banner 12px below + inside the top-right of the editor.
+          const r = view.dom.getBoundingClientRect();
+          banner.style.top = `${r.top + 12}px`;
+          banner.style.right = `${window.innerWidth - r.right + 12}px`;
         }
       };
 

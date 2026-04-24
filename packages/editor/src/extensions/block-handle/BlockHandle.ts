@@ -39,14 +39,15 @@ interface BlockHandleState {
 const STYLE_TAG_ID = "tpe-block-handle-style";
 const STYLE_RULES = `
 .tpe-block-cluster {
-  position: absolute;
+  position: fixed;
   display: none;
   align-items: center;
   gap: 2px;
   padding: 0;
-  z-index: 40;
+  z-index: 100;
   user-select: none;
   line-height: 1;
+  pointer-events: auto;
 }
 .tpe-block-cluster[data-visible="true"] { display: inline-flex; }
 .tpe-block-btn {
@@ -187,11 +188,13 @@ function createBlockHandlePlugin(
       cluster.appendChild(instructionBtn);
       cluster.appendChild(lockChip);
 
-      const host = view.dom.parentElement ?? document.body;
-      if (getComputedStyle(host).position === "static") {
-        host.style.position = "relative";
-      }
-      host.appendChild(cluster);
+      // Append to body so the fixed cluster is never clipped or
+      // repositioned by a flex / overflow:auto ancestor.
+      document.body.appendChild(cluster);
+
+      // The editor's scroll container. We need it for the scroll
+      // listener so the cluster repositions as the user scrolls.
+      const scrollHost = view.dom.parentElement ?? document.body;
 
       let hideTimer: number | null = null;
 
@@ -250,24 +253,17 @@ function createBlockHandlePlugin(
             : "Add instruction";
         }
 
-        // Position relative to host's scroll content. `getBoundingClientRect`
-        // is viewport-space, but absolute children of a scrollable host are
-        // positioned inside the host's content box, so we fold in the host's
-        // scroll offset.
-        const hostRect = host.getBoundingClientRect();
+        // The cluster uses position:fixed so coordinates are viewport-space.
+        // Vertically we centre the icon row on the block's first text line.
         const blockRect = target.dom.getBoundingClientRect();
-        const top =
-          blockRect.top -
-          hostRect.top +
-          host.scrollTop +
-          (options.offsetTop ?? 2);
-        const left =
-          blockRect.left -
-          hostRect.left +
-          host.scrollLeft -
-          (options.offsetLeft ?? 32);
-        cluster.style.top = `${top}px`;
-        cluster.style.left = `${left}px`;
+        const iconHeight = 20;
+        const lineH =
+          parseFloat(
+            window.getComputedStyle(target.dom).lineHeight || "0",
+          ) || iconHeight;
+        const vCentre = Math.max(0, (lineH - iconHeight) / 2);
+        cluster.style.top = `${blockRect.top + vCentre}px`;
+        cluster.style.left = `${blockRect.left - (options.offsetLeft ?? 56)}px`;
         cluster.setAttribute("data-visible", "true");
       };
 
@@ -300,9 +296,17 @@ function createBlockHandlePlugin(
         }, 150);
       };
 
+      // When the editor content scrolls, the block's viewport position
+      // changes but no PM state change fires. Reposition immediately.
+      const onScroll = () => {
+        const target = blockHandleKey.getState(view.state)?.target;
+        if (target) positionCluster(target);
+      };
+
       view.dom.addEventListener("mousemove", onMouseMove);
       view.dom.addEventListener("mouseleave", onMouseLeave);
       cluster.addEventListener("mouseleave", onClusterLeave);
+      scrollHost.addEventListener("scroll", onScroll, { passive: true });
 
       const onDragStart = (event: DragEvent) => {
         const target = blockHandleKey.getState(view.state)?.target;
@@ -391,6 +395,7 @@ function createBlockHandlePlugin(
           view.dom.removeEventListener("mousemove", onMouseMove);
           view.dom.removeEventListener("mouseleave", onMouseLeave);
           cluster.removeEventListener("mouseleave", onClusterLeave);
+          scrollHost.removeEventListener("scroll", onScroll);
           dragBtn.removeEventListener("dragstart", onDragStart);
           dragBtn.removeEventListener("dragend", onDragEnd);
           dragBtn.removeEventListener("click", onDragClick);
