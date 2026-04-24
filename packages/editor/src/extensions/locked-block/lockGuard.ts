@@ -17,41 +17,7 @@ export interface LockGuardOptions {
 
 const lockGuardPluginKey = new PluginKey("lockedBlockGuard");
 
-function findLockedAncestor(
-  state: EditorState,
-  pos: number,
-): { node: PMNode; pos: number } | null {
-  const $pos = state.doc.resolve(Math.min(pos, state.doc.content.size));
-  for (let depth = $pos.depth; depth > 0; depth--) {
-    const node = $pos.node(depth);
-    if (node.type.name === "lockedBlock") {
-      return { node, pos: $pos.before(depth) };
-    }
-  }
-  return null;
-}
-
-function descriptorOf(node: PMNode): LockedBlockDescriptor {
-  return {
-    mode: node.attrs.mode,
-    reason: node.attrs.reason,
-    condition: node.attrs.condition,
-    lockedBy: node.attrs.lockedBy,
-  };
-}
-
-function resolvedAncestorLock(
-  doc: PMNode,
-  pos: number,
-): PMNode | null {
-  const safe = Math.max(0, Math.min(pos, doc.content.size));
-  const $pos = doc.resolve(safe);
-  for (let depth = $pos.depth; depth > 0; depth--) {
-    const node = $pos.node(depth);
-    if (node.type.name === "lockedBlock") return node;
-  }
-  return null;
-}
+import { descriptorOf, resolvedAncestorLock, findLockedAncestor } from "./utils";
 
 /**
  * Transaction filter that protects locked blocks from two kinds of
@@ -100,54 +66,54 @@ export const LockGuard = Extension.create<LockGuardOptions>({
 
           for (let i = 0; i < tr.steps.length && !blocked; i++) {
             const step = tr.steps[i];
-            const json = step.toJSON() as { from?: number; to?: number };
-            const from = json.from;
-            const to = json.to ?? from;
-            if (typeof from !== "number" || typeof to !== "number") continue;
-
             const doc = tr.docs[i] ?? state.doc;
-            const safeFrom = Math.min(from, doc.content.size);
-            const safeTo = Math.min(to, doc.content.size);
 
-            // 1) Block-move / delete: a locked block wholly inside the
-            //    replaced range is being removed. Drag-reorder produces
-            //    a delete step on the source followed by an insert step
-            //    on the destination — vetoing the delete is enough to
-            //    cancel the move.
-            doc.nodesBetween(safeFrom, safeTo, (node, pos) => {
-              if (blocked) return false;
-              if (node.type.name !== "lockedBlock") return true;
-              const start = pos;
-              const end = pos + node.nodeSize;
-              if (start >= safeFrom && end <= safeTo) {
-                const decision = policy.canMoveBlock({
+            step.getMap().forEach((oldStart, oldEnd) => {
+              if (blocked) return;
+
+              const safeFrom = Math.min(oldStart, doc.content.size);
+              const safeTo = Math.min(oldEnd, doc.content.size);
+
+              // 1) Block-move / delete: a locked block wholly inside the
+              //    replaced range is being removed. Drag-reorder produces
+              //    a delete step on the source followed by an insert step
+              //    on the destination — vetoing the delete is enough to
+              //    cancel the move.
+              doc.nodesBetween(safeFrom, safeTo, (node, pos) => {
+                if (blocked) return false;
+                if (node.type.name !== "lockedBlock") return true;
+                const start = pos;
+                const end = pos + node.nodeSize;
+                if (start >= safeFrom && end <= safeTo) {
+                  const decision = policy.canMoveBlock({
+                    ...ctx,
+                    block: descriptorOf(node),
+                  });
+                  if (!decision.allowed) {
+                    deny("block.move", decision.reason);
+                  }
+                  return false; // don't descend — we already matched the block
+                }
+                return true;
+              });
+              if (blocked) return;
+
+              // 2) Content edit: a step whose endpoints live inside the
+              //    same locked block. `canEditBlock` decides.
+              const fromLock = resolvedAncestorLock(doc, safeFrom);
+              const toLock = resolvedAncestorLock(doc, safeTo);
+              for (const lock of [fromLock, toLock]) {
+                if (!lock) continue;
+                const decision = policy.canEditBlock({
                   ...ctx,
-                  block: descriptorOf(node),
+                  block: descriptorOf(lock),
                 });
                 if (!decision.allowed) {
-                  deny("block.move", decision.reason);
+                  deny("block.edit", decision.reason);
+                  break;
                 }
-                return false; // don't descend — we already matched the block
               }
-              return true;
             });
-            if (blocked) break;
-
-            // 2) Content edit: a step whose endpoints live inside the
-            //    same locked block. `canEditBlock` decides.
-            const fromLock = resolvedAncestorLock(doc, safeFrom);
-            const toLock = resolvedAncestorLock(doc, safeTo);
-            for (const lock of [fromLock, toLock]) {
-              if (!lock) continue;
-              const decision = policy.canEditBlock({
-                ...ctx,
-                block: descriptorOf(lock),
-              });
-              if (!decision.allowed) {
-                deny("block.edit", decision.reason);
-                break;
-              }
-            }
           }
 
           if (blocked) {

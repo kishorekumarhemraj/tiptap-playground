@@ -40,6 +40,9 @@ export interface EditorDrivers {
   collaboration?: CollaborationProviderFactory;
 }
 
+export interface CustomEditorFeatures extends Record<string, unknown> {}
+export interface CustomEditorClaims extends Record<string, unknown> {}
+
 /**
  * The full context passed to every extension module. Host apps build
  * this once and hand it to the Editor; extension modules read the
@@ -60,9 +63,9 @@ export interface EditorExtensionContext {
    * Per-feature config bag. Feature modules should narrow the type
    * they expect via a type guard so unrelated settings don't leak.
    */
-  features: Record<string, unknown>;
+  features: CustomEditorFeatures;
   /** Arbitrary host claims (tenant id, feature flags, document metadata). */
-  claims?: Record<string, unknown>;
+  claims?: CustomEditorClaims;
   drivers: EditorDrivers;
   policy: PermissionPolicy;
   events: EditorEventBus;

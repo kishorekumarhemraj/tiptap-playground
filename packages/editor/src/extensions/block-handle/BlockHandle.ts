@@ -38,7 +38,7 @@ interface BlockHandleState {
 
 const STYLE_TAG_ID = "tpe-block-handle-style";
 const STYLE_RULES = `
-/* ── Lock marker (always-visible gutter icon on locked blocks) ──────── */
+/* ── Lock marker (gutter icon on locked blocks) ─────────────────────── */
 .tpe-block-marker {
   position: absolute;
   top: 0.25em;
@@ -49,16 +49,14 @@ const STYLE_RULES = `
   width: 1.25em;
   height: 1.25em;
   color: var(--lock-accent);
-  opacity: 0.55;
+  opacity: 0;
   cursor: help;
   user-select: none;
-  transition: opacity 100ms ease;
+  transition: opacity 120ms ease;
   pointer-events: auto;
 }
-/* Full opacity on wrapper hover */
-[data-node-view-wrapper]:hover .tpe-block-marker { opacity: 1; }
-/* Fade when the hover cluster is active over this block */
-[data-block-hover] .tpe-block-marker { opacity: 0.15; }
+/* Show colorful icon when the block is hovered */
+[data-block-hover] .tpe-block-marker { opacity: 1; }
 
 /* ── Hover cluster ──────────────────────────────────────────────────── */
 .tpe-block-cluster {
@@ -97,20 +95,20 @@ const STYLE_RULES = `
   outline: 2px solid var(--accent, #2563eb);
   outline-offset: 1px;
 }
-.tpe-block-lockchip {
+.tpe-block-lock-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 0 6px;
   height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--bg-subtle, #f2f2ef);
+  color: var(--lock-accent, #737373);
   font-size: 11px;
   font-weight: 500;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--lock-accent, var(--fg-faint, #a0a0a0));
-  cursor: help;
+  white-space: nowrap;
 }
-.tpe-block-lockchip svg { width: 11px; height: 11px; }
+.tpe-block-lock-chip svg { width: 12px; height: 12px; }
 `;
 
 function ensureStyles() {
@@ -207,7 +205,7 @@ function createBlockHandlePlugin(
       instructionBtn.innerHTML = bulbSvg();
 
       const lockChip = document.createElement("span");
-      lockChip.className = "tpe-block-lockchip";
+      lockChip.className = "tpe-block-lock-chip";
 
       cluster.appendChild(plusBtn);
       cluster.appendChild(dragBtn);

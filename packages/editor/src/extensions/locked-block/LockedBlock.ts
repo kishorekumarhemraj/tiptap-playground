@@ -51,21 +51,7 @@ function descriptorFrom(attrs: Record<string, unknown>): LockedBlockAttrs {
   };
 }
 
-function findSurroundingLock(
-  state: import("@tiptap/pm/state").EditorState,
-): {
-  node: import("@tiptap/pm/model").Node;
-  pos: number;
-} | null {
-  const { $from } = state.selection;
-  for (let depth = $from.depth; depth > 0; depth--) {
-    const node = $from.node(depth);
-    if (node.type.name === "lockedBlock") {
-      return { node, pos: $from.before(depth) };
-    }
-  }
-  return null;
-}
+import { findLockedAncestor } from "./utils";
 
 /**
  * A container node whose content is conditionally editable.
@@ -189,7 +175,7 @@ export const LockedBlock = Node.create<LockedBlockOptions>({
       unsetLockedBlock:
         () =>
         ({ commands, state }) => {
-          const surrounding = findSurroundingLock(state);
+          const surrounding = findLockedAncestor(state, state.selection.from);
           if (!surrounding) return false;
           const ctx = getCtx();
           const target = descriptorFrom(surrounding.node.attrs);
@@ -217,7 +203,7 @@ export const LockedBlock = Node.create<LockedBlockOptions>({
       updateLockedBlock:
         (attrs) =>
         ({ commands, state }) => {
-          const surrounding = findSurroundingLock(state);
+          const surrounding = findLockedAncestor(state, state.selection.from);
           if (!surrounding) return false;
           const ctx = getCtx();
           const current = descriptorFrom(surrounding.node.attrs);
