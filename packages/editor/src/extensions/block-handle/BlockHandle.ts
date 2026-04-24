@@ -267,33 +267,29 @@ function createBlockHandlePlugin(
         cluster.setAttribute("data-visible", "true");
       };
 
-      const onMouseMove = (event: MouseEvent) => {
-        if (hideTimer) {
-          window.clearTimeout(hideTimer);
-          hideTimer = null;
+      // GUTTER_PX: how many pixels to the LEFT of the editor surface
+      // we still track the mouse. Must cover the cluster's width so
+      // moving over the + / drag / 💡 buttons still tracks the block.
+      const GUTTER_PX = (options.offsetLeft ?? 56) + 8;
+
+      const onGlobalMouseMove = (event: MouseEvent) => {
+        const editorRect = view.dom.getBoundingClientRect();
+        const inRange =
+          event.clientY >= editorRect.top &&
+          event.clientY <= editorRect.bottom &&
+          event.clientX >= editorRect.left - GUTTER_PX &&
+          event.clientX <= editorRect.right;
+
+        if (!inRange) {
+          if (hideTimer) { window.clearTimeout(hideTimer); hideTimer = null; }
+          setTarget(null);
+          positionCluster(null);
+          return;
         }
+        if (hideTimer) { window.clearTimeout(hideTimer); hideTimer = null; }
         const target = findBlockAtCoords(view, event.clientX, event.clientY);
         setTarget(target);
         positionCluster(target);
-      };
-
-      const onMouseLeave = (event: MouseEvent) => {
-        // Keep visible if the cursor is over the cluster itself.
-        const related = event.relatedTarget as Node | null;
-        if (related && cluster.contains(related)) return;
-        hideTimer = window.setTimeout(() => {
-          setTarget(null);
-          positionCluster(null);
-        }, 150);
-      };
-
-      const onClusterLeave = (event: MouseEvent) => {
-        const related = event.relatedTarget as Node | null;
-        if (related && view.dom.contains(related)) return;
-        hideTimer = window.setTimeout(() => {
-          setTarget(null);
-          positionCluster(null);
-        }, 150);
       };
 
       // When the editor content scrolls, the block's viewport position
@@ -303,9 +299,7 @@ function createBlockHandlePlugin(
         if (target) positionCluster(target);
       };
 
-      view.dom.addEventListener("mousemove", onMouseMove);
-      view.dom.addEventListener("mouseleave", onMouseLeave);
-      cluster.addEventListener("mouseleave", onClusterLeave);
+      window.addEventListener("mousemove", onGlobalMouseMove, { passive: true });
       scrollHost.addEventListener("scroll", onScroll, { passive: true });
 
       const onDragStart = (event: DragEvent) => {
@@ -392,9 +386,7 @@ function createBlockHandlePlugin(
           positionCluster(target ?? null);
         },
         destroy() {
-          view.dom.removeEventListener("mousemove", onMouseMove);
-          view.dom.removeEventListener("mouseleave", onMouseLeave);
-          cluster.removeEventListener("mouseleave", onClusterLeave);
+          window.removeEventListener("mousemove", onGlobalMouseMove);
           scrollHost.removeEventListener("scroll", onScroll);
           dragBtn.removeEventListener("dragstart", onDragStart);
           dragBtn.removeEventListener("dragend", onDragEnd);
@@ -433,10 +425,13 @@ function findBlockAtCoords(
   clientY: number,
 ): TargetBlock | null {
   const editorRect = view.dom.getBoundingClientRect();
-  const x = Math.min(
-    editorRect.right - 4,
-    Math.max(editorRect.left + 4, clientX),
-  );
+  // If the cursor is in the gutter (left of the editor surface), probe
+  // the horizontal centre of the editor so posAtCoords always lands on
+  // a real text node at the correct line rather than empty padding.
+  const x =
+    clientX < editorRect.left
+      ? editorRect.left + editorRect.width / 2
+      : Math.min(editorRect.right - 4, clientX);
   const y = Math.min(
     editorRect.bottom - 4,
     Math.max(editorRect.top + 4, clientY),
