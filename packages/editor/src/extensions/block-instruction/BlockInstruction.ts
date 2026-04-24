@@ -35,11 +35,13 @@ const STYLE_RULES = `
 
 function ensureStyles() {
   if (typeof document === "undefined") return;
-  if (document.getElementById(STYLE_TAG_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_TAG_ID;
+  let style = document.getElementById(STYLE_TAG_ID);
+  if (!style) {
+    style = document.createElement("style");
+    style.id = STYLE_TAG_ID;
+    document.head.appendChild(style);
+  }
   style.textContent = STYLE_RULES;
-  document.head.appendChild(style);
 }
 
 /**

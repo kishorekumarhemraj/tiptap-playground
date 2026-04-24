@@ -68,7 +68,6 @@ const STYLE_RULES = `
   transition: background-color 120ms ease, color 120ms ease;
 }
 .tpe-block-btn:hover {
-  background: var(--bg-subtle, #f2f2ef);
   color: var(--fg, #1f1f1c);
 }
 .tpe-block-btn[data-role="drag"] { cursor: grab; }
@@ -100,11 +99,13 @@ const STYLE_RULES = `
 
 function ensureStyles() {
   if (typeof document === "undefined") return;
-  if (document.getElementById(STYLE_TAG_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_TAG_ID;
+  let style = document.getElementById(STYLE_TAG_ID);
+  if (!style) {
+    style = document.createElement("style");
+    style.id = STYLE_TAG_ID;
+    document.head.appendChild(style);
+  }
   style.textContent = STYLE_RULES;
-  document.head.appendChild(style);
 }
 
 /**
@@ -302,6 +303,11 @@ function createBlockHandlePlugin(
       const GUTTER_PX = (options.offsetLeft ?? 24) + 80;
 
       const onGlobalMouseMove = (event: MouseEvent) => {
+        // Prevent flickering when interacting with the cluster buttons
+        if (cluster.contains(event.target as Node)) {
+          return;
+        }
+
         const editorRect = view.dom.getBoundingClientRect();
         const inRange =
           event.clientY >= editorRect.top &&
