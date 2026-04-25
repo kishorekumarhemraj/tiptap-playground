@@ -234,13 +234,14 @@ function createBlockHandlePlugin(
 
         // Visibility matrix:
         //   template:  insert + drag + instruction + lock chip
-        //   document:  lock chip only (if locked)
+        //   document:  lock chip (if locked)
         const showAuthorButtons = mode === "template";
+        const showDragHandle = mode === "template";
         const showLockChip = isLocked;
-        const showAnything = showAuthorButtons || showLockChip;
+        const showAnything = showAuthorButtons || showDragHandle || showLockChip;
 
         plusBtn.style.display = showAuthorButtons ? "inline-flex" : "none";
-        dragBtn.style.display = showAuthorButtons ? "inline-flex" : "none";
+        dragBtn.style.display = showDragHandle ? "inline-flex" : "none";
         instructionBtn.style.display = showAuthorButtons
           ? "inline-flex"
           : "none";
@@ -338,6 +339,10 @@ function createBlockHandlePlugin(
       scrollHost.addEventListener("scroll", onScroll, { passive: true });
 
       const onDragStart = (event: DragEvent) => {
+        if (mode !== "template") {
+          event.preventDefault();
+          return;
+        }
         const target = blockHandleKey.getState(view.state)?.target;
         if (!target) {
           event.preventDefault();
@@ -477,28 +482,32 @@ function findBlockAtCoords(
   return resolveTopBlockWithDom(view, hit.inside >= 0 ? hit.inside : hit.pos);
 }
 
-function resolveTopBlock(
-  state: EditorState,
-  pos: number,
-): { pos: number; node: PMNode } | null {
-  const safe = Math.max(0, Math.min(pos, state.doc.content.size - 1));
-  const $pos = state.doc.resolve(safe);
-  if ($pos.depth < 1) return null;
-  const nodePos = $pos.before(1);
-  const node = state.doc.nodeAt(nodePos);
-  if (!node) return null;
-  return { pos: nodePos, node };
-}
-
 function resolveTopBlockWithDom(
   view: EditorView,
   pos: number,
 ): TargetBlock | null {
-  const hit = resolveTopBlock(view.state, pos);
-  if (!hit) return null;
-  const dom = view.nodeDOM(hit.pos);
+  const { state } = view;
+  const safe = Math.max(0, Math.min(pos, state.doc.content.size - 1));
+  const $pos = state.doc.resolve(safe);
+  
+  let nodePos = -1;
+  let node: PMNode | null = null;
+
+  if ($pos.depth >= 1) {
+    nodePos = $pos.before(1);
+    node = state.doc.nodeAt(nodePos);
+  } else {
+    // If depth is 0, we might be pointing directly at a top-level node
+    nodePos = $pos.pos;
+    node = state.doc.nodeAt(nodePos);
+  }
+
+  if (!node || !node.isBlock) return null;
+
+  const dom = view.nodeDOM(nodePos);
   if (!(dom instanceof HTMLElement)) return null;
-  return { ...hit, dom };
+
+  return { pos: nodePos, node, dom };
 }
 
 interface LockDescriptor {
