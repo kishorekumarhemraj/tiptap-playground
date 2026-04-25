@@ -247,6 +247,14 @@ function createBlockHandlePlugin(
           : "none";
         lockChip.style.display = showLockChip ? "inline-flex" : "none";
 
+        console.log("positionCluster final state:", {
+          mode,
+          showDragHandle,
+          dragDisplay: dragBtn.style.display,
+          showAnything,
+          targetType: target.node.type.name
+        });
+
         if (!showAnything) {
           cluster.setAttribute("data-visible", "false");
           setHoverDom(null);
@@ -489,6 +497,7 @@ function resolveTopBlockWithDom(
   const { state } = view;
   const safe = Math.max(0, Math.min(pos, state.doc.content.size - 1));
   const $pos = state.doc.resolve(safe);
+  console.log("resolveTopBlockWithDom pos:", pos, "depth:", $pos.depth);
   
   let nodePos = -1;
   let node: PMNode | null = null;
@@ -496,15 +505,21 @@ function resolveTopBlockWithDom(
   if ($pos.depth >= 1) {
     nodePos = $pos.before(1);
     node = state.doc.nodeAt(nodePos);
+    console.log("depth >= 1, nodePos:", nodePos, "node:", node?.type.name);
   } else {
     // If depth is 0, we might be pointing directly at a top-level node
     nodePos = $pos.pos;
     node = state.doc.nodeAt(nodePos);
+    console.log("depth 0, nodePos:", nodePos, "node:", node?.type.name);
   }
 
-  if (!node || !node.isBlock) return null;
+  if (!node || !node.isBlock) {
+    console.log("not block or null node", node?.type.name);
+    return null;
+  }
 
   const dom = view.nodeDOM(nodePos);
+  console.log("dom for", nodePos, "is", dom?.nodeName);
   if (!(dom instanceof HTMLElement)) return null;
 
   return { pos: nodePos, node, dom };
