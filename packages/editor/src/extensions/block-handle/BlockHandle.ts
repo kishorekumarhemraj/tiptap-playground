@@ -38,27 +38,7 @@ interface BlockHandleState {
 
 const STYLE_TAG_ID = "tpe-block-handle-style";
 const STYLE_RULES = `
-/* ── Lock marker (always-visible gutter icon on locked blocks) ──────── */
-.tpe-block-marker {
-  position: absolute;
-  top: 0.25em;
-  left: -1.6em;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25em;
-  height: 1.25em;
-  color: var(--lock-accent);
-  opacity: 0.55;
-  cursor: help;
-  user-select: none;
-  transition: opacity 100ms ease;
-  pointer-events: auto;
-}
-/* Full opacity on wrapper hover */
-[data-node-view-wrapper]:hover .tpe-block-marker { opacity: 1; }
-/* Fade when the hover cluster is active over this block */
-[data-block-hover] .tpe-block-marker { opacity: 0.15; }
+/* tpe-block-marker removed: no longer showing icons in normal state */
 
 /* ── Hover cluster ──────────────────────────────────────────────────── */
 .tpe-block-cluster {
@@ -88,7 +68,6 @@ const STYLE_RULES = `
   transition: background-color 120ms ease, color 120ms ease;
 }
 .tpe-block-btn:hover {
-  background: var(--bg-subtle, #f2f2ef);
   color: var(--fg, #1f1f1c);
 }
 .tpe-block-btn[data-role="drag"] { cursor: grab; }
@@ -97,29 +76,36 @@ const STYLE_RULES = `
   outline: 2px solid var(--accent, #2563eb);
   outline-offset: 1px;
 }
-.tpe-block-lockchip {
+.tpe-block-lock-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 6px;
+  justify-content: center;
+  width: 20px;
   height: 20px;
-  font-size: 11px;
-  font-weight: 500;
-  border-radius: 4px;
   background: transparent;
-  color: var(--lock-accent, var(--fg-faint, #a0a0a0));
   cursor: help;
 }
-.tpe-block-lockchip svg { width: 11px; height: 11px; }
+.tpe-block-lock-chip[data-mode="locked"] {
+  color: var(--warning, #d97706);
+}
+.tpe-block-lock-chip[data-mode="readonly"] {
+  color: var(--fg-faint, #a8a8a5);
+}
+.tpe-block-lock-chip[data-mode="conditional"] {
+  color: var(--accent, #2563eb);
+}
+.tpe-block-lock-chip svg { width: 14px; height: 14px; }
 `;
 
 function ensureStyles() {
   if (typeof document === "undefined") return;
-  if (document.getElementById(STYLE_TAG_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_TAG_ID;
+  let style = document.getElementById(STYLE_TAG_ID);
+  if (!style) {
+    style = document.createElement("style");
+    style.id = STYLE_TAG_ID;
+    document.head.appendChild(style);
+  }
   style.textContent = STYLE_RULES;
-  document.head.appendChild(style);
 }
 
 /**
@@ -142,10 +128,9 @@ export const BlockHandle = Extension.create<BlockHandleOptions>({
   addOptions() {
     return {
       // offsetLeft: distance in px from the block's left edge to the
-      // marker's left edge (≈ 1.6em at 15px base). The cluster's right
-      // edge aligns here; the cluster itself extends further left via
-      // translateX(-100%) so the two gutter elements form one strip.
-      offsetLeft: 24,
+      // right edge of the cluster. Reduced to 8px so the icons sit
+      // closely to the block content.
+      offsetLeft: 8,
       offsetTop: 2,
     };
   },
@@ -207,7 +192,7 @@ function createBlockHandlePlugin(
       instructionBtn.innerHTML = bulbSvg();
 
       const lockChip = document.createElement("span");
-      lockChip.className = "tpe-block-lockchip";
+      lockChip.className = "tpe-block-lock-chip";
 
       cluster.appendChild(plusBtn);
       cluster.appendChild(dragBtn);
@@ -245,23 +230,30 @@ function createBlockHandlePlugin(
           return;
         }
         const lock = getLockDescriptor(target.node);
-        const isLocked =
-          lock?.mode === "locked" || lock?.mode === "readonly";
+        const isLocked = lock !== null;
 
         // Visibility matrix:
-        //   template + any:    insert + drag + instruction  (no lock chip)
-        //   document + locked: lock chip only
-        //   document + other:  nothing - editable text only
+        //   template:  insert + drag + instruction + lock chip
+        //   document:  lock chip (if locked)
         const showAuthorButtons = mode === "template";
-        const showLockChip = mode === "document" && isLocked;
-        const showAnything = showAuthorButtons || showLockChip;
+        const showDragHandle = mode === "template";
+        const showLockChip = isLocked;
+        const showAnything = showAuthorButtons || showDragHandle || showLockChip;
 
         plusBtn.style.display = showAuthorButtons ? "inline-flex" : "none";
-        dragBtn.style.display = showAuthorButtons ? "inline-flex" : "none";
+        dragBtn.style.display = showDragHandle ? "inline-flex" : "none";
         instructionBtn.style.display = showAuthorButtons
           ? "inline-flex"
           : "none";
         lockChip.style.display = showLockChip ? "inline-flex" : "none";
+
+        console.log("positionCluster final state:", {
+          mode,
+          showDragHandle,
+          dragDisplay: dragBtn.style.display,
+          showAnything,
+          targetType: target.node.type.name
+        });
 
         if (!showAnything) {
           cluster.setAttribute("data-visible", "false");
@@ -270,9 +262,8 @@ function createBlockHandlePlugin(
         }
 
         if (showLockChip && lock) {
-          lockChip.innerHTML = `${lockSvg(lock.mode)}<span>${
-            lock.mode === "readonly" ? "Read-only" : "Locked"
-          }</span>`;
+          lockChip.innerHTML = lockSvg(lock.mode);
+          lockChip.setAttribute("data-mode", lock.mode);
           lockChip.title =
             lock.reason ??
             (lock.mode === "readonly"
@@ -321,6 +312,11 @@ function createBlockHandlePlugin(
       const GUTTER_PX = (options.offsetLeft ?? 24) + 80;
 
       const onGlobalMouseMove = (event: MouseEvent) => {
+        // Prevent flickering when interacting with the cluster buttons
+        if (cluster.contains(event.target as Node)) {
+          return;
+        }
+
         const editorRect = view.dom.getBoundingClientRect();
         const inRange =
           event.clientY >= editorRect.top &&
@@ -351,6 +347,10 @@ function createBlockHandlePlugin(
       scrollHost.addEventListener("scroll", onScroll, { passive: true });
 
       const onDragStart = (event: DragEvent) => {
+        if (mode !== "template") {
+          event.preventDefault();
+          return;
+        }
         const target = blockHandleKey.getState(view.state)?.target;
         if (!target) {
           event.preventDefault();
@@ -387,11 +387,11 @@ function createBlockHandlePlugin(
         const instruction =
           typeof window !== "undefined"
             ? (
-                window.prompt(
-                  "Instruction for this block (optional - leave empty for none)",
-                  "",
-                ) ?? ""
-              ).trim()
+              window.prompt(
+                "Instruction for this block (optional - leave empty for none)",
+                "",
+              ) ?? ""
+            ).trim()
             : "";
         insertParagraphAfter(view, target, instruction || null);
         view.focus();
@@ -490,28 +490,39 @@ function findBlockAtCoords(
   return resolveTopBlockWithDom(view, hit.inside >= 0 ? hit.inside : hit.pos);
 }
 
-function resolveTopBlock(
-  state: EditorState,
-  pos: number,
-): { pos: number; node: PMNode } | null {
-  const safe = Math.max(0, Math.min(pos, state.doc.content.size - 1));
-  const $pos = state.doc.resolve(safe);
-  if ($pos.depth < 1) return null;
-  const nodePos = $pos.before(1);
-  const node = state.doc.nodeAt(nodePos);
-  if (!node) return null;
-  return { pos: nodePos, node };
-}
-
 function resolveTopBlockWithDom(
   view: EditorView,
   pos: number,
 ): TargetBlock | null {
-  const hit = resolveTopBlock(view.state, pos);
-  if (!hit) return null;
-  const dom = view.nodeDOM(hit.pos);
+  const { state } = view;
+  const safe = Math.max(0, Math.min(pos, state.doc.content.size - 1));
+  const $pos = state.doc.resolve(safe);
+  console.log("resolveTopBlockWithDom pos:", pos, "depth:", $pos.depth);
+  
+  let nodePos = -1;
+  let node: PMNode | null = null;
+
+  if ($pos.depth >= 1) {
+    nodePos = $pos.before(1);
+    node = state.doc.nodeAt(nodePos);
+    console.log("depth >= 1, nodePos:", nodePos, "node:", node?.type.name);
+  } else {
+    // If depth is 0, we might be pointing directly at a top-level node
+    nodePos = $pos.pos;
+    node = state.doc.nodeAt(nodePos);
+    console.log("depth 0, nodePos:", nodePos, "node:", node?.type.name);
+  }
+
+  if (!node || !node.isBlock) {
+    console.log("not block or null node", node?.type.name);
+    return null;
+  }
+
+  const dom = view.nodeDOM(nodePos);
+  console.log("dom for", nodePos, "is", dom?.nodeName);
   if (!(dom instanceof HTMLElement)) return null;
-  return { ...hit, dom };
+
+  return { pos: nodePos, node, dom };
 }
 
 interface LockDescriptor {

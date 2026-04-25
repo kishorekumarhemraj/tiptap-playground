@@ -17,8 +17,8 @@ export interface EditorEventMap {
   "version.deleted": { id: string };
 
   "change.tracking.toggled": { active: boolean };
-  "change.accepted": { count: number };
-  "change.rejected": { count: number };
+  "change.accepted": { count: number; changeId?: string };
+  "change.rejected": { count: number; changeId?: string };
 
   "block.locked": {
     mode: LockMode;

@@ -2,34 +2,46 @@ import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    blockInstruction: {
+      toggleInstructions: () => ReturnType;
+    };
+  }
+}
+
+
 const instructionKey = new PluginKey("blockInstruction");
 
 const STYLE_TAG_ID = "tpe-block-instruction-style";
 const STYLE_RULES = `
 .tpe-instruction-widget {
-  display: block;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--fg-muted, #6b6b68);
-  background: var(--instruction-bg, rgba(255, 215, 100, 0.16));
-  border-left: 3px solid var(--instruction-accent, #e6c96f);
-  padding: 6px 10px;
-  border-radius: 0 6px 6px 0;
-  margin: 0 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--instruction-accent, #3b82f6);
+  background: var(--instruction-bg, rgba(59, 130, 246, 0.1));
+  padding: 4px 8px;
+  border-radius: 12px;
+  margin: 0 0 2px;
   user-select: none;
   pointer-events: none;
   font-style: normal;
-  font-weight: 400;
+  font-weight: 500;
 }
 `;
 
 function ensureStyles() {
   if (typeof document === "undefined") return;
-  if (document.getElementById(STYLE_TAG_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_TAG_ID;
+  let style = document.getElementById(STYLE_TAG_ID);
+  if (!style) {
+    style = document.createElement("style");
+    style.id = STYLE_TAG_ID;
+    document.head.appendChild(style);
+  }
   style.textContent = STYLE_RULES;
-  document.head.appendChild(style);
 }
 
 /**
@@ -75,14 +87,39 @@ export const BlockInstruction = Extension.create({
     ];
   },
 
+  addStorage() {
+    return {
+      showInstructions: true,
+    };
+  },
+
+  addCommands() {
+    return {
+      toggleInstructions:
+        () =>
+        ({ editor }) => {
+          editor.storage.blockInstruction.showInstructions =
+            !editor.storage.blockInstruction.showInstructions;
+          // Dispatch empty transaction to force UI update
+          editor.view.dispatch(editor.state.tr.setMeta(instructionKey, {}));
+          return true;
+        },
+    };
+  },
+
   addProseMirrorPlugins() {
     ensureStyles();
+    const editor = this.editor;
 
     return [
       new Plugin({
         key: instructionKey,
         props: {
           decorations(state) {
+            if (!editor.storage.blockInstruction?.showInstructions) {
+              return DecorationSet.empty;
+            }
+
             const decos: Decoration[] = [];
 
             state.doc.forEach((node, pos) => {

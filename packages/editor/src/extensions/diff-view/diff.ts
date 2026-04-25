@@ -30,9 +30,45 @@ function blockKey(node: JSONContent, index: number): string {
 }
 
 /**
+ * A standard Longest Common Subsequence (LCS) implementation to align
+ * arrays of string keys, preserving order and identifying added/removed items.
+ */
+function computeLCS(left: string[], right: string[]): { leftIdx: number; rightIdx: number }[] {
+  const m = left.length;
+  const n = right.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (left[i - 1] === right[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  const lcs: { leftIdx: number; rightIdx: number }[] = [];
+  let i = m;
+  let j = n;
+  while (i > 0 && j > 0) {
+    if (left[i - 1] === right[j - 1]) {
+      lcs.unshift({ leftIdx: i - 1, rightIdx: j - 1 });
+      i--;
+      j--;
+    } else if (dp[i - 1][j] > dp[i][j - 1]) {
+      i--;
+    } else {
+      j--;
+    }
+  }
+  return lcs;
+}
+
+/**
  * Block-level diff between two TipTap docs. We align top-level
- * children by `(type, text)` key: blocks present on both sides are
- * `unchanged`, the rest are tagged `removed` / `added`.
+ * children by `(type, text)` key using an LCS algorithm. Blocks present
+ * in the LCS are `unchanged`, the rest are tagged `removed` / `added`.
  *
  * Doesn't do moves or sub-block edits - paragraphs that changed even
  * a single character show up as one removal + one addition. That's
@@ -45,31 +81,21 @@ export function diffDocs(left: JSONContent, right: JSONContent): DiffResult {
   const leftKeys = leftBlocks.map((b, i) => blockKey(b, i));
   const rightKeys = rightBlocks.map((b, i) => blockKey(b, i));
 
-  const rightCounts = new Map<string, number>();
-  for (const k of rightKeys) {
-    rightCounts.set(k, (rightCounts.get(k) ?? 0) + 1);
-  }
+  const lcs = computeLCS(leftKeys, rightKeys);
+  const lcsLeft = new Set(lcs.map((m) => m.leftIdx));
+  const lcsRight = new Set(lcs.map((m) => m.rightIdx));
 
-  const leftCounts = new Map<string, number>();
-  for (const k of leftKeys) {
-    leftCounts.set(k, (leftCounts.get(k) ?? 0) + 1);
-  }
+  const leftEntries: BlockDiffEntry[] = leftKeys.map((key, index) => ({
+    index,
+    key,
+    status: lcsLeft.has(index) ? "unchanged" : "removed",
+  }));
 
-  const leftEntries: BlockDiffEntry[] = leftKeys.map((key, index) => {
-    if ((rightCounts.get(key) ?? 0) > 0) {
-      rightCounts.set(key, (rightCounts.get(key) ?? 0) - 1);
-      return { index, key, status: "unchanged" };
-    }
-    return { index, key, status: "removed" };
-  });
-
-  const rightEntries: BlockDiffEntry[] = rightKeys.map((key, index) => {
-    if ((leftCounts.get(key) ?? 0) > 0) {
-      leftCounts.set(key, (leftCounts.get(key) ?? 0) - 1);
-      return { index, key, status: "unchanged" };
-    }
-    return { index, key, status: "added" };
-  });
+  const rightEntries: BlockDiffEntry[] = rightKeys.map((key, index) => ({
+    index,
+    key,
+    status: lcsRight.has(index) ? "unchanged" : "added",
+  }));
 
   return { left: leftEntries, right: rightEntries };
 }

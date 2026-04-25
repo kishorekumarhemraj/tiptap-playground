@@ -21,6 +21,7 @@ import { buildPlaygroundDrivers } from "./drivers";
 import styles from "./EditorShell.module.css";
 
 const DOCUMENT_ID = "playground-doc";
+const CONTENT_KEY = `tiptap-editor:content:${DOCUMENT_ID}`;
 
 const DEFAULT_CONTENT = `
 <h1>Welcome to the TipTap Playground</h1>
@@ -40,6 +41,17 @@ const DEFAULT_CONTENT = `
 </div>
 `;
 
+function loadInitialContent(): JSONContent | string {
+  if (typeof window === "undefined") return DEFAULT_CONTENT;
+  try {
+    const raw = window.localStorage.getItem(CONTENT_KEY);
+    if (raw) return JSON.parse(raw) as JSONContent;
+  } catch {
+    /* corrupt storage — fall back to default */
+  }
+  return DEFAULT_CONTENT;
+}
+
 export function EditorShell() {
   const [readOnly, setReadOnly] = useState(false);
   const [mode, setMode] = useState<EditorMode>("template");
@@ -53,14 +65,19 @@ export function EditorShell() {
     right: DiffPaneVersion;
   } | null>(null);
 
-  // Persist the current document across context rebuilds. When the
-  // user toggles Template <-> Document we want the Editor to pick up
-  // the new policy / mode wiring but keep whatever the user just
-  // wrote. The ref holds the latest JSON and is read as
-  // `initialContent` every time the Editor remounts.
-  const latestJsonRef = useRef<JSONContent | string>(DEFAULT_CONTENT);
+  // Persist the current document across context rebuilds AND page
+  // reloads. On mount we read from localStorage; on every update we
+  // write back. When the user toggles Template <-> Document we still
+  // pass the latest JSON so the editor keeps whatever the user wrote.
+  const latestJsonRef = useRef<JSONContent | string>(loadInitialContent());
   const handleUpdateJSON = useCallback((json: JSONContent) => {
     latestJsonRef.current = json;
+    // Auto-save every edit so instructions survive a page refresh.
+    try {
+      window.localStorage.setItem(CONTENT_KEY, JSON.stringify(json));
+    } catch {
+      /* quota / private mode — non-fatal */
+    }
   }, []);
 
   // Every concern the editor needs is assembled in one place: user,

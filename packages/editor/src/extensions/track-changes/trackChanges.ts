@@ -12,6 +12,8 @@ import type { AuditLog } from "../../drivers/audit-log";
 export interface TrackChangesAuthor {
   id: string;
   name: string;
+  /** Optional role list, e.g. ["author"], ["contributor"], ["reviewer"] */
+  roles?: string[];
 }
 
 export interface TrackChangesStorage {
@@ -40,6 +42,10 @@ declare module "@tiptap/core" {
       toggleTrackChanges: () => ReturnType;
       acceptAllChanges: () => ReturnType;
       rejectAllChanges: () => ReturnType;
+      /** Accept a single tracked change by its changeId. */
+      acceptChange: (changeId: string) => ReturnType;
+      /** Reject a single tracked change by its changeId. */
+      rejectChange: (changeId: string) => ReturnType;
     };
   }
 }
@@ -51,37 +57,73 @@ const SUPPRESS_META = "trackChanges:suppress";
 interface MarkRange {
   from: number;
   to: number;
+  attrs?: Record<string, unknown>;
 }
 
 function collectMarkRanges(
   doc: import("@tiptap/pm/model").Node,
   type: MarkType,
+  filterChangeId?: string,
 ): MarkRange[] {
   const ranges: MarkRange[] = [];
   doc.descendants((node, pos) => {
     if (!node.isText) return;
-    const has = node.marks.some((m) => m.type === type);
-    if (!has) return;
+    const mark = node.marks.find((m) => m.type === type);
+    if (!mark) return;
+    if (filterChangeId && mark.attrs.changeId !== filterChangeId) return;
     const from = pos;
     const to = pos + node.nodeSize;
     const last = ranges[ranges.length - 1];
-    if (last && last.to === from) {
+    // Merge only if same changeId
+    if (
+      last &&
+      last.to === from &&
+      last.attrs?.changeId === mark.attrs.changeId
+    ) {
       last.to = to;
     } else {
-      ranges.push({ from, to });
+      ranges.push({ from, to, attrs: mark.attrs });
     }
   });
   return ranges;
 }
 
+/** Generate a short collision-resistant ID for a change run. */
+function newChangeId(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
+
 function buildAttrs(
   storage: TrackChangesStorage,
+  changeId?: string,
 ): ChangeAttrs {
   return {
     author: storage.author?.name ?? null,
     authorId: storage.author?.id ?? null,
     timestamp: Date.now(),
+    changeId: changeId ?? newChangeId(),
   };
+}
+
+/**
+ * Check whether the current user is allowed to accept/reject a change
+ * made by `changeAuthorId`.
+ *
+ * Rules:
+ *  - Authors (role "author") can accept/reject anyone's changes.
+ *  - Contributors / reviewers can only accept/reject their own.
+ *  - If no roles are defined, fall back to permissive (anyone can act).
+ */
+function canActOnChange(
+  actor: TrackChangesAuthor | null,
+  changeAuthorId: string | null,
+): boolean {
+  if (!actor) return false;
+  const roles = actor.roles ?? [];
+  if (roles.length === 0) return true; // no roles configured → permissive
+  if (roles.includes("author")) return true; // authors act on anyone
+  // contributors / reviewers may only act on their own changes
+  return actor.id === changeAuthorId;
 }
 
 /**
@@ -91,13 +133,14 @@ function buildAttrs(
  *   - Every insertion is wrapped in an `insertion` mark via
  *     `appendTransaction`, which runs after the user's transaction
  *     and adds the mark over whatever positions ended up new.
- *   - Backspace / Delete are intercepted and replaced with a
- *     `deletion` mark + cursor move - so nothing is actually removed
- *     from the document; the text becomes a "proposed deletion".
+ *   - Backspace / Delete are intercepted. If the range being deleted is
+ *     *entirely covered* by an `insertion` mark belonging to the current
+ *     author, the mark (and underlying text) is simply removed — no
+ *     deletion tracking needed for reversing your own pending insertion.
+ *     Otherwise, the text is hidden behind a `deletion` mark.
  *
- * Accept / reject removes the marks (or the underlying text) over
- * the whole document. A future iteration can scope them to a
- * selection or to a specific change run.
+ * Accept / reject removes the marks (or the underlying text).
+ * Individual accept/reject is scoped by `changeId`.
  */
 export const TrackChanges = Extension.create<
   TrackChangesOptions,
@@ -148,10 +191,8 @@ export const TrackChanges = Extension.create<
           options.audit?.record({
             type: "change.tracking.toggled",
             at: Date.now(),
-            actor: ctx
-              ? { id: ctx.user.id, name: ctx.user.name }
-              : { id: "?", name: "?" },
-            documentId: ctx?.documentId ?? "?",
+            actor: { id: "?", name: "?" },
+            documentId: "?",
             summary: `Track changes ${active ? "on" : "off"}`,
             payload: { active },
           });
@@ -188,16 +229,6 @@ export const TrackChanges = Extension.create<
           if (dispatch) dispatch(tr);
           const count = deletions.length + insertions.length;
           options.events?.emit("change.accepted", { count });
-          options.audit?.record({
-            type: "change.accepted",
-            at: Date.now(),
-            actor: ctx
-              ? { id: ctx.user.id, name: ctx.user.name }
-              : { id: "?", name: "?" },
-            documentId: ctx?.documentId ?? "?",
-            summary: `Accepted ${count} changes`,
-            payload: { count },
-          });
           return true;
         },
 
@@ -226,16 +257,113 @@ export const TrackChanges = Extension.create<
           if (dispatch) dispatch(tr);
           const count = insertions.length + deletions.length;
           options.events?.emit("change.rejected", { count });
-          options.audit?.record({
-            type: "change.rejected",
-            at: Date.now(),
-            actor: ctx
-              ? { id: ctx.user.id, name: ctx.user.name }
-              : { id: "?", name: "?" },
-            documentId: ctx?.documentId ?? "?",
-            summary: `Rejected ${count} changes`,
-            payload: { count },
-          });
+          return true;
+        },
+
+      acceptChange:
+        (changeId) =>
+        ({ state, tr, dispatch }) => {
+          const storage = this.editor?.storage
+            .trackChanges as TrackChangesStorage | undefined;
+          const insertionType = state.schema.marks.insertion;
+          const deletionType = state.schema.marks.deletion;
+          if (!insertionType || !deletionType) return false;
+
+          // Role check: find the change author from the mark
+          const allRanges = [
+            ...collectMarkRanges(state.doc, insertionType, changeId),
+            ...collectMarkRanges(state.doc, deletionType, changeId),
+          ];
+          if (allRanges.length === 0) return false;
+
+          const changeAuthorId = allRanges[0].attrs?.authorId as
+            | string
+            | null;
+          if (!canActOnChange(storage?.author ?? null, changeAuthorId)) {
+            options.events?.emit("permission.denied", {
+              action: "change.accept",
+              reason:
+                "Only the author can accept/reject other contributors' changes",
+            });
+            return false;
+          }
+
+          // Accept: keep insertions (remove mark), delete deletions
+          const deletions = collectMarkRanges(state.doc, deletionType, changeId);
+          const insertions = collectMarkRanges(
+            state.doc,
+            insertionType,
+            changeId,
+          );
+          for (let i = deletions.length - 1; i >= 0; i--) {
+            tr.delete(
+              tr.mapping.map(deletions[i].from),
+              tr.mapping.map(deletions[i].to),
+            );
+          }
+          for (const { from, to } of insertions) {
+            tr.removeMark(
+              tr.mapping.map(from),
+              tr.mapping.map(to),
+              insertionType,
+            );
+          }
+          tr.setMeta(SUPPRESS_META, true);
+          if (dispatch) dispatch(tr);
+          options.events?.emit("change.accepted", { changeId, count: 1 });
+          return true;
+        },
+
+      rejectChange:
+        (changeId) =>
+        ({ state, tr, dispatch }) => {
+          const storage = this.editor?.storage
+            .trackChanges as TrackChangesStorage | undefined;
+          const insertionType = state.schema.marks.insertion;
+          const deletionType = state.schema.marks.deletion;
+          if (!insertionType || !deletionType) return false;
+
+          const allRanges = [
+            ...collectMarkRanges(state.doc, insertionType, changeId),
+            ...collectMarkRanges(state.doc, deletionType, changeId),
+          ];
+          if (allRanges.length === 0) return false;
+
+          const changeAuthorId = allRanges[0].attrs?.authorId as
+            | string
+            | null;
+          if (!canActOnChange(storage?.author ?? null, changeAuthorId)) {
+            options.events?.emit("permission.denied", {
+              action: "change.reject",
+              reason:
+                "Only the author can accept/reject other contributors' changes",
+            });
+            return false;
+          }
+
+          // Reject: delete insertions, restore deletions (remove mark)
+          const insertions = collectMarkRanges(
+            state.doc,
+            insertionType,
+            changeId,
+          );
+          const deletions = collectMarkRanges(state.doc, deletionType, changeId);
+          for (let i = insertions.length - 1; i >= 0; i--) {
+            tr.delete(
+              tr.mapping.map(insertions[i].from),
+              tr.mapping.map(insertions[i].to),
+            );
+          }
+          for (const { from, to } of deletions) {
+            tr.removeMark(
+              tr.mapping.map(from),
+              tr.mapping.map(to),
+              deletionType,
+            );
+          }
+          tr.setMeta(SUPPRESS_META, true);
+          if (dispatch) dispatch(tr);
+          options.events?.emit("change.rejected", { changeId, count: 1 });
           return true;
         },
     };
@@ -246,12 +374,13 @@ export const TrackChanges = Extension.create<
       (direction: "back" | "forward") =>
       () => {
         const editor = this.editor;
-        const storage = editor.storage.trackChanges;
+        const storage = editor.storage.trackChanges as TrackChangesStorage;
         if (!storage.active) return false;
 
         const { state } = editor;
         const deletionType = state.schema.marks.deletion;
-        if (!deletionType) return false;
+        const insertionType = state.schema.marks.insertion;
+        if (!deletionType || !insertionType) return false;
 
         let from: number;
         let to: number;
@@ -261,7 +390,8 @@ export const TrackChanges = Extension.create<
             from = state.selection.from - 1;
             to = state.selection.from;
           } else {
-            if (state.selection.from >= state.doc.content.size - 1) return false;
+            if (state.selection.from >= state.doc.content.size - 1)
+              return false;
             from = state.selection.from;
             to = state.selection.from + 1;
           }
@@ -271,6 +401,31 @@ export const TrackChanges = Extension.create<
         }
 
         const tr = state.tr;
+
+        // ── Smart deletion ────────────────────────────────────────────────
+        // If the entire range-to-delete is covered by insertion marks that
+        // belong to the *current author*, just remove those marks and the
+        // underlying text (undo the pending insertion) instead of layering
+        // a deletion mark on top.
+        const $from = state.doc.resolve(from);
+        const $to = state.doc.resolve(to);
+        let entirelyOwnInsertion = true;
+        state.doc.nodesBetween(from, to, (node, pos) => {
+          if (!node.isText) return;
+          const insMark = node.marks.find((m) => m.type === insertionType);
+          if (!insMark || insMark.attrs.authorId !== storage.author?.id) {
+            entirelyOwnInsertion = false;
+          }
+        });
+
+        if (entirelyOwnInsertion && from < to) {
+          tr.delete(from, to);
+          tr.setMeta(SUPPRESS_META, true);
+          editor.view.dispatch(tr);
+          return true;
+        }
+
+        // ── Standard tracked deletion ─────────────────────────────────────
         tr.addMark(from, to, deletionType.create(buildAttrs(storage)));
         const cursor = direction === "back" ? from : to;
         tr.setSelection(TextSelection.create(tr.doc, cursor));
@@ -287,12 +442,21 @@ export const TrackChanges = Extension.create<
 
   addProseMirrorPlugins() {
     const ext = this;
+    // Stable changeId for the current continuous insertion burst.
+    // Resets whenever tracking is toggled or a non-insertion transaction
+    // interrupts the flow.
+    let currentInsertionChangeId: string | null = null;
+
     return [
       new Plugin({
         key: trackChangesPluginKey,
         appendTransaction(transactions, _oldState, newState) {
-          const storage = ext.editor?.storage.trackChanges;
-          if (!storage?.active) return null;
+          const storage = ext.editor?.storage
+            .trackChanges as TrackChangesStorage | undefined;
+          if (!storage?.active) {
+            currentInsertionChangeId = null;
+            return null;
+          }
 
           // Skip transactions we (or our commands) initiated.
           const interesting = transactions.filter(
@@ -303,8 +467,16 @@ export const TrackChanges = Extension.create<
           const insertionType = newState.schema.marks.insertion;
           if (!insertionType) return null;
 
+          // Reuse the same changeId for a burst of keystrokes so they
+          // form one logical "change run" that can be accepted/rejected
+          // as a unit. A new changeId is minted when the author pauses
+          // or a non-text transaction occurs.
+          if (!currentInsertionChangeId) {
+            currentInsertionChangeId = newChangeId();
+          }
+
           const newTr = newState.tr;
-          const attrs = buildAttrs(storage);
+          const attrs = buildAttrs(storage, currentInsertionChangeId);
           let modified = false;
 
           for (const tr of interesting) {
@@ -312,8 +484,6 @@ export const TrackChanges = Extension.create<
               const map = step.getMap();
               map.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
                 if (newEnd <= newStart) return;
-                // Map through the rest of this transaction's steps so
-                // we land on positions that exist in `newState`.
                 const remaining = tr.mapping.slice(idx + 1);
                 const from = remaining.map(newStart, 1);
                 const to = remaining.map(newEnd, -1);

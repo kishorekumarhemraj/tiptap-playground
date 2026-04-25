@@ -7,6 +7,17 @@ export const blockInstructionModule: EditorExtensionModule = {
   description:
     "Stores an optional one-line instruction on any top-level block and renders it as a helper above the block. Authoring-only - documents never set new instructions, they only display what the template carries.",
   tiptap: () => [BlockInstruction],
+  toolbar: () => [
+    {
+      kind: "button",
+      id: "toggleInstructions",
+      label: "💡 Show Instructions",
+      title: "Toggle block instructions visibility",
+      isActive: (editor) =>
+        editor.storage.blockInstruction?.showInstructions === true,
+      onRun: (editor) => editor.commands.toggleInstructions(),
+    },
+  ],
 };
 
 export * from "./BlockInstruction";
