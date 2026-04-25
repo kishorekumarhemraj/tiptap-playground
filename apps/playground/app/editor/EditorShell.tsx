@@ -21,24 +21,25 @@ import { buildPlaygroundDrivers } from "./drivers";
 import styles from "./EditorShell.module.css";
 
 const DOCUMENT_ID = "playground-doc";
-const CONTENT_KEY = `tiptap-editor:content:${DOCUMENT_ID}`;
+// Bumped to v2 when the schema dropped `lockedBlock` and added
+// `section` / `editableField` / `field`. Old persisted JSON would
+// fail to parse against the new schema.
+const CONTENT_KEY = `tiptap-editor:content:v2:${DOCUMENT_ID}`;
 
 const DEFAULT_CONTENT = `
 <h1>Welcome to the TipTap Playground</h1>
-<p>
+<p data-instruction="Brief intro shown at the top of the doc">
   This app is a thin host on top of <code>@tiptap-playground/editor</code>.
   Every privileged action flows through injected drivers.
 </p>
-<p>Try formatting text, creating lists, or inserting a locked section.</p>
-<div data-type="locked-block" data-lock-mode="locked" data-lock-reason="Legal boilerplate">
-  <p>This section is locked. Typing inside it is rejected by the transaction guard.</p>
-</div>
-<div data-type="locked-block" data-lock-mode="readonly">
-  <p>This section is read-only - visible to everyone, editable by nobody.</p>
-</div>
-<div data-type="locked-block" data-lock-mode="conditional" data-lock-condition="user.role === 'admin'">
-  <p>This section only opens up when the condition evaluates truthy.</p>
-</div>
+<section data-type="section" data-title="Reviewer notes" data-instruction="Free-form area for the reviewer to fill in">
+  <div data-type="editable-field" data-instruction="Write your summary here">
+    <p></p>
+  </div>
+</section>
+<section data-type="section" data-title="Decision">
+  <p>The reviewer's decision will be recorded with an inline field.</p>
+</section>
 `;
 
 function loadInitialContent(): JSONContent | string {

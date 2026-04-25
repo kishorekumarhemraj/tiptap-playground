@@ -6,6 +6,7 @@ import type {
   SignatureCeremony,
 } from "../drivers/signature-ceremony";
 import type { CollaborationProviderFactory } from "../drivers/collaboration-provider";
+import type { FieldRegistry } from "../drivers/field-registry";
 import type { PermissionPolicy, EditorUser } from "./policy";
 import type { EditorEventBus } from "./events";
 
@@ -14,30 +15,37 @@ export type { EditorUser } from "./policy";
 /**
  * Document lifecycle mode.
  *
- * - `template` — authoring a reusable template. Every block can be
- *   edited, reordered, locked, unlocked, or have its lock mode
- *   changed. Consumers never see the editor in this mode.
- * - `document` — a document instantiated from a template. Locked
- *   blocks are read-only and immovable; unlocked blocks behave
- *   normally. Authors cannot toggle locks.
+ * - `template` — authoring a reusable template. The author defines
+ *   the document outline by adding sections, editable fields, and
+ *   host-supplied form fields, optionally annotated with instructions
+ *   for the end user.
+ * - `document` — an instance created from a template. The structure
+ *   is frozen: end users cannot add, remove, or reorder blocks
+ *   (except inside `mutableContent` sections). Content edits are
+ *   confined to `editableField` regions and `field` value changes.
  *
  * The mode flows through `PolicyContext` so the host policy can
- * still override (e.g. an admin role that can edit locked blocks
- * in document mode). The default policy enforces the contract
- * above.
+ * still override (e.g. an admin role that can mutate structure in
+ * document mode). The default policy enforces the contract above.
  */
 export type EditorMode = "template" | "document";
 
 /**
  * Drivers supplied by the host. Every privileged concern (auth,
- * persistence, telemetry, signatures, transport) flows through one
- * of these so the editor stays portable across apps.
+ * persistence, telemetry, signatures, transport, form fields) flows
+ * through one of these so the editor stays portable across apps.
  */
 export interface EditorDrivers {
   versionStore: VersionStore;
   auditLog: AuditLog;
   signatures?: SignatureCeremony;
   collaboration?: CollaborationProviderFactory;
+  /**
+   * Registry of host-supplied form fields (selects, dates, custom
+   * controls). Optional — templates without `field` nodes don't
+   * need it.
+   */
+  fields?: FieldRegistry;
 }
 
 export interface CustomEditorFeatures extends Record<string, unknown> {}

@@ -1,6 +1,8 @@
 import type { EditorExtensionModule } from "../core/types";
 import { coreFormattingModule } from "./core-formatting";
-import { lockedBlockModule } from "./locked-block";
+import { sectionModule } from "./section";
+import { editableFieldModule } from "./editable-field";
+import { fieldModule } from "./field";
 import { blockInstructionModule } from "./block-instruction";
 import { blockHandleModule } from "./block-handle";
 import { slashCommandModule } from "./slash-command";
@@ -17,7 +19,9 @@ import { diffViewModule } from "./diff-view";
  */
 export const defaultExtensionModules: EditorExtensionModule[] = [
   coreFormattingModule,
-  lockedBlockModule,
+  sectionModule,
+  editableFieldModule,
+  fieldModule,
   blockInstructionModule,
   blockHandleModule,
   slashCommandModule,
@@ -29,7 +33,9 @@ export const defaultExtensionModules: EditorExtensionModule[] = [
 
 export {
   coreFormattingModule,
-  lockedBlockModule,
+  sectionModule,
+  editableFieldModule,
+  fieldModule,
   blockInstructionModule,
   blockHandleModule,
   slashCommandModule,

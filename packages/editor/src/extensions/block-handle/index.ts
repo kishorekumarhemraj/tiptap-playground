@@ -5,7 +5,7 @@ export const blockHandleModule: EditorExtensionModule = {
   id: "block-handle",
   name: "Block drag handle",
   description:
-    "Notion-style floating drag grip on hover. In document mode the handle is suppressed on locked / read-only blocks; in template mode every block is draggable. Actual moves go through the LockGuard + PermissionPolicy.canMoveBlock.",
+    "Notion-style floating drag grip on hover. In template mode every block is draggable; in document mode the handle is suppressed (the structure guard would reject moves anyway). Slated to be replaced by @tiptap/extension-drag-handle-react.",
   tiptap: (ctx) => [BlockHandle.configure({ editorMode: ctx.mode })],
 };
 

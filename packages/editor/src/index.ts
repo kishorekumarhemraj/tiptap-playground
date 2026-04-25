@@ -43,7 +43,8 @@ export type {
   PermissionPolicy,
   PolicyContext,
   PolicyDecision,
-  LockedBlockDescriptor,
+  BlockDescriptor,
+  FieldDescriptor,
 } from "./core/policy";
 export { defaultPermissionPolicy } from "./core/policy";
 

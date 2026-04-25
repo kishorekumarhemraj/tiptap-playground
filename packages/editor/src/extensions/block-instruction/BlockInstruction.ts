@@ -8,6 +8,9 @@ declare module "@tiptap/core" {
       toggleInstructions: () => ReturnType;
     };
   }
+  interface Storage {
+    blockInstruction: { showInstructions: boolean };
+  }
 }
 
 
@@ -62,6 +65,9 @@ export const BlockInstruction = Extension.create({
   name: "blockInstruction",
 
   addGlobalAttributes() {
+    // `section` and `editableField` declare `instruction` themselves
+    // (it's intrinsic to those nodes). For everything else, the
+    // attribute is bolted on globally so any block can carry one.
     return [
       {
         types: [
@@ -69,7 +75,6 @@ export const BlockInstruction = Extension.create({
           "heading",
           "blockquote",
           "codeBlock",
-          "lockedBlock",
         ],
         attributes: {
           instruction: {

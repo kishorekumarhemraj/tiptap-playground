@@ -83,21 +83,48 @@ export function defaultSlashCommands(
     },
   ];
 
-  // Authoring-only: inserting a locked block from a document would
-  // be rejected by the policy anyway; hide it from the menu to match.
+  // Authoring-only entries. Documents can't add structural elements
+  // anyway — the structure guard would reject them — so we hide them
+  // from the menu to match.
   if (ctx.mode === "template") {
     items.push({
-      id: "locked-block",
-      title: "Locked section",
-      description: "Policy-controlled block — read-only in documents",
-      keywords: ["lock", "locked", "readonly", "policy"],
-      run: (editor, range) =>
+      id: "section",
+      title: "Section",
+      description: "Container for grouping blocks into a named region",
+      keywords: ["section", "group", "container", "region"],
+      run: (editor, range) => {
+        const title =
+          typeof window !== "undefined"
+            ? (window.prompt("Section title (optional)", "") ?? "").trim()
+            : "";
         editor
           .chain()
           .focus()
           .deleteRange(range)
-          .setLockedBlock({ mode: "locked", reason: "Policy-controlled section" })
-          .run(),
+          .setSection(title ? { title } : {})
+          .run();
+      },
+    });
+    items.push({
+      id: "editable-field",
+      title: "Editable region",
+      description: "Free-form area the end user fills in",
+      keywords: ["editable", "field", "fill", "input", "region"],
+      run: (editor, range) => {
+        const instruction =
+          typeof window !== "undefined"
+            ? (window.prompt(
+                "Instruction for this editable region (optional)",
+                "",
+              ) ?? "").trim()
+            : "";
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .setEditableField(instruction ? { instruction } : {})
+          .run();
+      },
     });
     items.push({
       id: "instructed-paragraph",
