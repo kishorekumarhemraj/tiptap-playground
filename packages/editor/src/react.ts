@@ -8,6 +8,9 @@
 export { Editor } from "./react/Editor";
 export type { EditorProps } from "./react/Editor";
 
+export { TemplateDragHandle } from "./react/DragHandle";
+export type { TemplateDragHandleProps } from "./react/DragHandle";
+
 export { Toolbar } from "./react/Toolbar";
 export type { ToolbarProps } from "./react/Toolbar";
 
