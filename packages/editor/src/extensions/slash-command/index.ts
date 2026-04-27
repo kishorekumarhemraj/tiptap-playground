@@ -153,9 +153,55 @@ export function defaultSlashCommands(
           .run();
       },
     });
+
+    // One slash entry per registered field definition. The picker
+    // pulls definitions synchronously from the registry — async
+    // (HTTP-backed) registries should pre-warm via subscribe before
+    // authoring opens, otherwise items appear after the next render.
+    const fields = ctx.drivers.fields;
+    if (fields) {
+      const result = fields.list();
+      const defs = Array.isArray(result) ? result : [];
+      for (const def of defs) {
+        items.push({
+          id: `field:${def.id}`,
+          title: def.label,
+          description:
+            def.instruction ?? `Insert a ${def.kind} field`,
+          keywords: ["field", def.kind, def.id, def.label.toLowerCase()],
+          icon: fieldIcon(def.kind),
+          run: (editor, range) =>
+            editor
+              .chain()
+              .focus()
+              .deleteRange(range)
+              .insertField({ fieldId: def.id })
+              .run(),
+        });
+      }
+    }
   }
 
   return items;
+}
+
+function fieldIcon(kind: string): string {
+  // Tiny inline SVG keyed off the kind so the slash menu can hint
+  // at the control type. Falls back to a generic chip.
+  const stroke = `stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
+  switch (kind) {
+    case "select":
+    case "multiSelect":
+      return `<svg viewBox="0 0 16 16" ${stroke}><path d="M3 6l5 4 5-4"/></svg>`;
+    case "date":
+      return `<svg viewBox="0 0 16 16" ${stroke}><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></svg>`;
+    case "number":
+      return `<svg viewBox="0 0 16 16" ${stroke}><path d="M3 5h10M3 11h10M6 2L5 14M11 2l-1 12"/></svg>`;
+    case "boolean":
+      return `<svg viewBox="0 0 16 16" ${stroke}><rect x="2.5" y="4.5" width="11" height="7" rx="3.5"/><circle cx="11" cy="8" r="2.5" fill="currentColor"/></svg>`;
+    default:
+      return `<svg viewBox="0 0 16 16" ${stroke}><rect x="2.5" y="5.5" width="11" height="5" rx="1.2"/></svg>`;
+  }
 }
 
 export interface SlashCommandFeatureConfig {
