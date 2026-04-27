@@ -86,15 +86,17 @@ export function Editor({
     };
   }, [editor, onEditor]);
 
-  // Drag handle is template-mode only — in document mode the
-  // structure is frozen, so a handle would be misleading.
+  // Drag handle is template-mode only — in document mode the structure is
+  // frozen, so a handle would be misleading. We keep TemplateDragHandle
+  // mounted even when inactive (active=false) to avoid the removeChild
+  // crash caused by the library moving its element outside the React tree.
   const showDragHandle = context.mode === "template" && !context.readOnly;
 
   return (
     <div className={`${styles.root} ${className ?? ""}`.trim()}>
       {!hideToolbar && <Toolbar editor={editor} items={toolbarItems} />}
       <EditorContent editor={editor} className={styles.editorContent} />
-      {showDragHandle && <TemplateDragHandle editor={editor} />}
+      <TemplateDragHandle editor={editor} active={showDragHandle} />
     </div>
   );
 }
