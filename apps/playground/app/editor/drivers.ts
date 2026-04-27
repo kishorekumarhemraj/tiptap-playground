@@ -11,6 +11,7 @@ import {
   type EditorDrivers,
   type FieldDefinition,
 } from "@tiptap-playground/editor";
+import { renderField } from "./fields/FieldRenderer";
 
 const DEMO_FIELDS: FieldDefinition[] = [
   {
@@ -26,9 +27,29 @@ const DEMO_FIELDS: FieldDefinition[] = [
     ],
   },
   {
+    id: "reviewer-name",
+    kind: "text",
+    label: "Reviewer",
+    instruction: "Name of the reviewer",
+    required: true,
+  },
+  {
     id: "review-date",
     kind: "date",
     label: "Review date",
+    required: false,
+  },
+  {
+    id: "risk-score",
+    kind: "number",
+    label: "Risk score",
+    instruction: "0–100",
+    required: false,
+  },
+  {
+    id: "needs-followup",
+    kind: "boolean",
+    label: "Needs follow-up",
     required: false,
   },
 ];
@@ -50,9 +71,7 @@ export function buildPlaygroundDrivers(documentId: string): EditorDrivers {
     versionStore: localStorageVersionStore(documentId),
     auditLog: consoleAuditLog(),
     collaboration: collaboration ?? undefined,
-    // `render` is wired later (phase 3) when the FieldView NodeView
-    // lands. Phase 1 only proves the schema and driver wire up.
-    fields: memoryFieldRegistry(DEMO_FIELDS),
+    fields: memoryFieldRegistry(DEMO_FIELDS, renderField),
   };
 }
 

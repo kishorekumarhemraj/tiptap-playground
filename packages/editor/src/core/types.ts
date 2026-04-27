@@ -112,9 +112,10 @@ export interface ToolbarDropdown {
 export type ToolbarItem = ToolbarButton | ToolbarDivider | ToolbarDropdown;
 
 /**
- * The module contract. Each feature (formatting, locked blocks,
- * collaboration, track changes, versioning, diff view) implements
- * this and contributes TipTap extensions and/or toolbar entries.
+ * The module contract. Each feature (formatting, sections, editable
+ * fields, form fields, structure guard, collaboration, track changes,
+ * versioning, diff view) implements this and contributes TipTap
+ * extensions and/or toolbar entries.
  */
 export interface EditorExtensionModule {
   id: string;

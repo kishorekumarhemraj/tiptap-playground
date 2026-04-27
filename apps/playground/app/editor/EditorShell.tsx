@@ -27,18 +27,38 @@ const DOCUMENT_ID = "playground-doc";
 const CONTENT_KEY = `tiptap-editor:content:v2:${DOCUMENT_ID}`;
 
 const DEFAULT_CONTENT = `
-<h1>Welcome to the TipTap Playground</h1>
-<p data-instruction="Brief intro shown at the top of the doc">
-  This app is a thin host on top of <code>@tiptap-playground/editor</code>.
-  Every privileged action flows through injected drivers.
+<h1>Quarterly Compliance Review</h1>
+<p data-instruction="Header block — author this in template mode.">
+  This template captures the reviewer's findings, decision, and any
+  follow-up actions for the quarterly compliance review.
 </p>
-<section data-type="section" data-title="Reviewer notes" data-instruction="Free-form area for the reviewer to fill in">
-  <div data-type="editable-field" data-instruction="Write your summary here">
+
+<section data-type="section" data-title="Header" data-instruction="Static template content. The reviewer cannot edit this.">
+  <p>
+    Reviewer: <span data-type="field" data-field-id="reviewer-name"></span>
+    on <span data-type="field" data-field-id="review-date"></span>.
+  </p>
+</section>
+
+<section data-type="section" data-title="Findings" data-instruction="Reviewer's free-form summary of observations">
+  <div data-type="editable-field" data-instruction="Summarise key findings (3–5 sentences)" data-placeholder="Describe what was reviewed, methodology, and observations…">
     <p></p>
   </div>
 </section>
+
 <section data-type="section" data-title="Decision">
-  <p>The reviewer's decision will be recorded with an inline field.</p>
+  <p>
+    Final decision: <span data-type="field" data-field-id="decision"></span>.
+    Risk score: <span data-type="field" data-field-id="risk-score"></span>.
+    <span data-type="field" data-field-id="needs-followup"></span>
+  </p>
+</section>
+
+<section data-type="section" data-title="Action items" data-instruction="Add as many follow-up items as needed" data-mutable-content="true">
+  <p>The reviewer can add new bullet points here in document mode.</p>
+  <ul>
+    <li>Initial action item placeholder</li>
+  </ul>
 </section>
 `;
 
@@ -142,7 +162,7 @@ export function EditorShell() {
               className={styles.segmentedButton}
               data-active={mode === "template"}
               onClick={() => setMode("template")}
-              title="Author a template: locks can be set, changed, moved"
+              title="Author the template: add sections, editable regions, and form fields"
             >
               Template
             </button>
@@ -153,7 +173,7 @@ export function EditorShell() {
               className={styles.segmentedButton}
               data-active={mode === "document"}
               onClick={() => setMode("document")}
-              title="Document from template: locked blocks are read-only and immovable"
+              title="Fill in a document: structure is fixed; only editable regions and fields accept input"
             >
               Document
             </button>
