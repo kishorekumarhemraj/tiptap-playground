@@ -6,6 +6,7 @@ import {
   type VersionSnapshot,
   type VersionStore,
 } from "../../drivers/version-store";
+import { TEMPLATE_GUARD_BYPASS_META } from "../template-guard/TemplateStructureGuard";
 import type {
   PermissionPolicy,
   PolicyContext,
@@ -172,7 +173,7 @@ export const Versioning = Extension.create<VersioningOptions, VersioningStorage>
 
       restoreVersion:
         (id) =>
-        ({ editor, commands }) => {
+        ({ editor }) => {
           const ctx = options.getPolicyContext?.();
           if (options.policy && ctx) {
             const decision = options.policy.canRestoreVersion({
@@ -188,21 +189,32 @@ export const Versioning = Extension.create<VersioningOptions, VersioningStorage>
           const maybe = options.store.get(id);
           const apply = (snapshot: VersionSnapshot | null) => {
             if (!snapshot) return false;
-            const ok = commands.setContent(snapshot.json, { emitUpdate: true });
-            if (ok) {
-              options.events?.emit("version.restored", { snapshot });
-              options.audit?.record({
-                type: "version.restored",
-                at: Date.now(),
-                actor: ctx
-                  ? { id: ctx.user.id, name: ctx.user.name }
-                  : { id: "?", name: "?" },
-                documentId: ctx?.documentId ?? "?",
-                summary: `Restored version "${snapshot.label}"`,
-                payload: { id: snapshot.id, label: snapshot.label },
-              });
-            }
-            return ok;
+            // Restore replaces the entire doc body, which would trip
+            // the template structure guard in document mode. Restore
+            // is a privileged operation — already gated by
+            // `canRestoreVersion` above — so we mark the transaction
+            // with the bypass meta and dispatch directly.
+            const { state, view, schema } = editor;
+            const restored = schema.nodeFromJSON(snapshot.json);
+            const tr = state.tr.replaceWith(
+              0,
+              state.doc.content.size,
+              restored.content,
+            );
+            tr.setMeta(TEMPLATE_GUARD_BYPASS_META, true);
+            view.dispatch(tr);
+            options.events?.emit("version.restored", { snapshot });
+            options.audit?.record({
+              type: "version.restored",
+              at: Date.now(),
+              actor: ctx
+                ? { id: ctx.user.id, name: ctx.user.name }
+                : { id: "?", name: "?" },
+              documentId: ctx?.documentId ?? "?",
+              summary: `Restored version "${snapshot.label}"`,
+              payload: { id: snapshot.id, label: snapshot.label },
+            });
+            return true;
           };
           if (maybe instanceof Promise) {
             void maybe.then(apply);
