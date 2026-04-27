@@ -16,6 +16,7 @@ import type {
   EditorExtensionModule,
 } from "../core/types";
 import { Toolbar } from "./Toolbar";
+import { TemplateDragHandle } from "./DragHandle";
 import styles from "./Editor.module.css";
 
 export interface EditorProps {
@@ -85,10 +86,15 @@ export function Editor({
     };
   }, [editor, onEditor]);
 
+  // Drag handle is template-mode only — in document mode the
+  // structure is frozen, so a handle would be misleading.
+  const showDragHandle = context.mode === "template" && !context.readOnly;
+
   return (
     <div className={`${styles.root} ${className ?? ""}`.trim()}>
       {!hideToolbar && <Toolbar editor={editor} items={toolbarItems} />}
       <EditorContent editor={editor} className={styles.editorContent} />
+      {showDragHandle && <TemplateDragHandle editor={editor} />}
     </div>
   );
 }

@@ -9,8 +9,9 @@ export default function Page() {
           <div className={styles.badge}>@tiptap-playground/editor</div>
           <h1 className={styles.title}>TipTap Playground</h1>
           <p className={styles.subtitle}>
-            A feature-rich document editor with collaboration, track changes,
-            locked blocks, versioning, and side-by-side diff — powered by{" "}
+            Template-based editor with sections, editable regions, host-driven
+            form fields, collaboration, track changes, versioning, and
+            side-by-side diff — powered by{" "}
             <code>@tiptap-playground/editor</code>. Every privileged action
             flows through host-supplied drivers and a{" "}
             <code>PermissionPolicy</code>.

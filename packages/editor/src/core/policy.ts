@@ -1,4 +1,3 @@
-import type { LockMode } from "../extensions/locked-block/LockedBlock";
 import type { EditorMode } from "./types";
 
 export interface EditorUser {
@@ -23,11 +22,28 @@ export interface PolicyDecision {
   requiresSignature?: boolean;
 }
 
-export interface LockedBlockDescriptor {
-  mode: LockMode;
-  reason: string | null;
-  condition: string | null;
-  lockedBy: string | null;
+/**
+ * Description of a block whose structure or content the policy is
+ * being asked to gate. `type` is the ProseMirror node type name; the
+ * rest is the node's attribute bag (id, mutableContent, instruction,
+ * etc.) so the policy can pivot on anything the schema declares.
+ */
+export interface BlockDescriptor {
+  type: string;
+  id: string | null;
+  attrs: Record<string, unknown>;
+}
+
+/**
+ * Description of a `field` instance whose value is changing. The
+ * `fieldId` identifies the host's `FieldDefinition`.
+ */
+export interface FieldDescriptor {
+  /** Per-instance node id. */
+  id: string | null;
+  /** Definition id used to look up the host's `FieldDefinition`. */
+  fieldId: string;
+  value: unknown;
 }
 
 export interface PolicyContext {
@@ -37,8 +53,7 @@ export interface PolicyContext {
   claims?: Record<string, unknown>;
   /**
    * Template authoring vs. document consumption. The default policy
-   * uses this to decide whether lock-bearing actions (set lock,
-   * change mode, move a locked block) are allowed.
+   * uses this to decide whether structural edits are allowed.
    */
   mode: EditorMode;
 }
@@ -55,31 +70,42 @@ export interface PolicyContext {
  * applying.
  */
 export interface PermissionPolicy {
+  /** Coarse global gate — set to false for fully-readonly views. */
   canEditDocument(ctx: PolicyContext): PolicyDecision;
-  canEditBlock(
-    ctx: PolicyContext & { block: LockedBlockDescriptor },
+
+  /**
+   * Gate for any structural mutation inside a container — adding,
+   * removing, or reordering its children. The container is `doc`,
+   * a `section`, or an `editableField`. The default policy:
+   *   - template mode: always allow
+   *   - document mode:
+   *     - `editableField`: allow (rich text inside is free-form)
+   *     - `section` with `mutableContent === true`: allow
+   *     - everything else: deny
+   */
+  canModifyStructure(
+    ctx: PolicyContext & { container: BlockDescriptor },
   ): PolicyDecision;
 
-  canSetLock(
-    ctx: PolicyContext & { target: LockedBlockDescriptor },
-  ): PolicyDecision;
-  canUnlock(
-    ctx: PolicyContext & { target: LockedBlockDescriptor },
-  ): PolicyDecision;
-  canChangeLockMode(
-    ctx: PolicyContext & {
-      from: LockMode;
-      to: LockMode;
-      target: LockedBlockDescriptor;
-    },
-  ): PolicyDecision;
   /**
-   * Gate for moving (drag/drop, cut, indent) a *locked* block to a
-   * different position. Content-level edits inside the block still
-   * go through `canEditBlock`.
+   * Gate for content edits inside an `editableField` wrapper. Default
+   * policy: allow in both modes; hosts override to lock fields once a
+   * document enters approval / signing.
    */
-  canMoveBlock(
-    ctx: PolicyContext & { block: LockedBlockDescriptor },
+  canFillField(
+    ctx: PolicyContext & { field: BlockDescriptor },
+  ): PolicyDecision;
+
+  /**
+   * Gate for value changes on a `field` (host-rendered control). The
+   * NodeView calls this before forwarding `onChange` to the host.
+   */
+  canChangeFieldValue(
+    ctx: PolicyContext & {
+      field: FieldDescriptor;
+      from: unknown;
+      to: unknown;
+    },
   ): PolicyDecision;
 
   canToggleTrackChanges(ctx: PolicyContext): PolicyDecision;
@@ -95,9 +121,9 @@ export interface PermissionPolicy {
   ): PolicyDecision;
 
   /**
-   * Evaluator for a `conditional` lock's expression. The expression
-   * string lives in the document; evaluation lives here so hosts
-   * decide whether a block is editable based on current state.
+   * Evaluator for arbitrary host expressions. Currently used by
+   * conditional field visibility (planned). Hosts that don't need
+   * conditions can return `false`.
    */
   evaluateCondition(
     expression: string,
@@ -108,73 +134,57 @@ export interface PermissionPolicy {
 const ALLOW: PolicyDecision = { allowed: true };
 
 /**
- * Default policy - permissive with reasonable defaults for a local
- * playground. Regulated hosts should supply their own.
+ * Default policy — permissive defaults suitable for a local playground.
+ * Regulated hosts should supply their own.
  *
- * Mode drives the defaults:
- * - `template`: authors shape the template. Locked/readonly blocks
- *   are still editable and the lock itself can be set, cleared,
- *   changed, or moved. This lets the author draft locked sections.
- * - `document`: consumers fill in a document instantiated from a
- *   template. Locked / read-only blocks reject edits and moves,
- *   and the lock itself cannot be toggled.
- * Conditional blocks defer to `evaluateCondition` in both modes.
+ * Mode drives the structural defaults:
+ * - `template`: authors shape the template freely. Anything goes.
+ * - `document`: structure is frozen except inside `editableField`
+ *   wrappers and inside `section` blocks marked `mutableContent`.
+ *
+ * Field value changes default to allowed in both modes; lock them
+ * down in your override when the document enters approval.
  */
 export function defaultPermissionPolicy(overrides: {
   evaluateCondition?: (expression: string, ctx: PolicyContext) => boolean;
 } = {}): PermissionPolicy {
-  const evaluate =
-    overrides.evaluateCondition ?? (() => false);
+  const evaluate = overrides.evaluateCondition ?? (() => false);
 
-  const templateOnly = (action: string): PolicyDecision => ({
+  const denyDocOnly = (action: string): PolicyDecision => ({
     allowed: false,
     reason: `${action} is only available while authoring a template`,
   });
 
   return {
     canEditDocument: () => ALLOW,
-    canEditBlock: ({ block, mode, ...rest }) => {
+
+    canModifyStructure: ({ mode, container }) => {
       if (mode === "template") return ALLOW;
-      if (block.mode === "locked") {
-        return { allowed: false, reason: block.reason ?? "Block is locked" };
+      // Document mode: only certain containers permit structural changes.
+      switch (container.type) {
+        case "editableField":
+          return ALLOW;
+        case "section":
+          return container.attrs.mutableContent === true
+            ? ALLOW
+            : {
+                allowed: false,
+                reason:
+                  "Section structure is fixed by the template",
+              };
+        case "doc":
+          return {
+            allowed: false,
+            reason: "Document outline is fixed by the template",
+          };
+        default:
+          return denyDocOnly("Modifying structure");
       }
-      if (block.mode === "readonly") {
-        return { allowed: false, reason: "Block is read-only" };
-      }
-      if (block.mode === "conditional") {
-        const ok = block.condition
-          ? evaluate(block.condition, {
-              user: rest.user,
-              documentId: rest.documentId,
-              claims: rest.claims,
-              mode,
-            })
-          : false;
-        return ok
-          ? ALLOW
-          : {
-              allowed: false,
-              reason: "Conditional block - condition not satisfied",
-            };
-      }
-      return ALLOW;
     },
-    canSetLock: ({ mode }) =>
-      mode === "template" ? ALLOW : templateOnly("Locking a block"),
-    canUnlock: ({ mode }) =>
-      mode === "template" ? ALLOW : templateOnly("Unlocking a block"),
-    canChangeLockMode: ({ mode }) =>
-      mode === "template" ? ALLOW : templateOnly("Changing lock mode"),
-    canMoveBlock: ({ block, mode }) => {
-      if (mode === "template") return ALLOW;
-      if (block.mode === "locked" || block.mode === "readonly") {
-        return {
-          allowed: false,
-          reason: "Locked blocks cannot be moved in a document",
-        };
-      }
-      return ALLOW;
-    },
+
+    canFillField: () => ALLOW,
+    canChangeFieldValue: () => ALLOW,
+
     canToggleTrackChanges: () => ALLOW,
     canAcceptChanges: () => ALLOW,
     canRejectChanges: () => ALLOW,

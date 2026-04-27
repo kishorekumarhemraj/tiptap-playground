@@ -1,6 +1,5 @@
 import type { JSONContent } from "@tiptap/react";
 import type { VersionSnapshot } from "../drivers/version-store";
-import type { LockMode } from "../extensions/locked-block/LockedBlock";
 import type { Signature } from "../drivers/signature-ceremony";
 
 /**
@@ -20,14 +19,13 @@ export interface EditorEventMap {
   "change.accepted": { count: number; changeId?: string };
   "change.rejected": { count: number; changeId?: string };
 
-  "block.locked": {
-    mode: LockMode;
-    reason: string | null;
-    condition: string | null;
-    pos: number;
+  /** A `field` value was committed via the host's renderer. */
+  "field.value.changed": {
+    id: string | null;
+    fieldId: string;
+    from: unknown;
+    to: unknown;
   };
-  "block.unlocked": { pos: number };
-  "block.mode.changed": { from: LockMode; to: LockMode; pos: number };
 
   "document.changed": { json: JSONContent };
 

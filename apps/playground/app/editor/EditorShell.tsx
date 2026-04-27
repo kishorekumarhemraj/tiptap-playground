@@ -21,24 +21,45 @@ import { buildPlaygroundDrivers } from "./drivers";
 import styles from "./EditorShell.module.css";
 
 const DOCUMENT_ID = "playground-doc";
-const CONTENT_KEY = `tiptap-editor:content:${DOCUMENT_ID}`;
+// Bumped to v2 when the schema dropped `lockedBlock` and added
+// `section` / `editableField` / `field`. Old persisted JSON would
+// fail to parse against the new schema.
+const CONTENT_KEY = `tiptap-editor:content:v2:${DOCUMENT_ID}`;
 
 const DEFAULT_CONTENT = `
-<h1>Welcome to the TipTap Playground</h1>
-<p>
-  This app is a thin host on top of <code>@tiptap-playground/editor</code>.
-  Every privileged action flows through injected drivers.
+<h1>Quarterly Compliance Review</h1>
+<p data-instruction="Header block — author this in template mode.">
+  This template captures the reviewer's findings, decision, and any
+  follow-up actions for the quarterly compliance review.
 </p>
-<p>Try formatting text, creating lists, or inserting a locked section.</p>
-<div data-type="locked-block" data-lock-mode="locked" data-lock-reason="Legal boilerplate">
-  <p>This section is locked. Typing inside it is rejected by the transaction guard.</p>
-</div>
-<div data-type="locked-block" data-lock-mode="readonly">
-  <p>This section is read-only - visible to everyone, editable by nobody.</p>
-</div>
-<div data-type="locked-block" data-lock-mode="conditional" data-lock-condition="user.role === 'admin'">
-  <p>This section only opens up when the condition evaluates truthy.</p>
-</div>
+
+<section data-type="section" data-title="Header" data-instruction="Static template content. The reviewer cannot edit this.">
+  <p>
+    Reviewer: <span data-type="field" data-field-id="reviewer-name"></span>
+    on <span data-type="field" data-field-id="review-date"></span>.
+  </p>
+</section>
+
+<section data-type="section" data-title="Findings" data-instruction="Reviewer's free-form summary of observations">
+  <div data-type="editable-field" data-instruction="Summarise key findings (3–5 sentences)" data-placeholder="Describe what was reviewed, methodology, and observations…">
+    <p></p>
+  </div>
+</section>
+
+<section data-type="section" data-title="Decision">
+  <p>
+    Final decision: <span data-type="field" data-field-id="decision"></span>.
+    Risk score: <span data-type="field" data-field-id="risk-score"></span>.
+    <span data-type="field" data-field-id="needs-followup"></span>
+  </p>
+</section>
+
+<section data-type="section" data-title="Action items" data-instruction="Add as many follow-up items as needed" data-mutable-content="true">
+  <p>The reviewer can add new bullet points here in document mode.</p>
+  <ul>
+    <li>Initial action item placeholder</li>
+  </ul>
+</section>
 `;
 
 function loadInitialContent(): JSONContent | string {
@@ -141,7 +162,7 @@ export function EditorShell() {
               className={styles.segmentedButton}
               data-active={mode === "template"}
               onClick={() => setMode("template")}
-              title="Author a template: locks can be set, changed, moved"
+              title="Author the template: add sections, editable regions, and form fields"
             >
               Template
             </button>
@@ -152,7 +173,7 @@ export function EditorShell() {
               className={styles.segmentedButton}
               data-active={mode === "document"}
               onClick={() => setMode("document")}
-              title="Document from template: locked blocks are read-only and immovable"
+              title="Fill in a document: structure is fixed; only editable regions and fields accept input"
             >
               Document
             </button>
