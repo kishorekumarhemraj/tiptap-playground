@@ -6,7 +6,7 @@ export const editableFieldModule: EditorExtensionModule = {
   name: "Editable field wrapper",
   description:
     "Block wrapper marking a free-form rich-text region the end user is meant to fill in. Content inside is editable in document mode; the wrapper itself is immovable and undeletable.",
-  tiptap: () => [EditableField],
+  tiptap: (ctx) => [EditableField.configure({ editorMode: ctx.mode })],
   toolbar: (ctx) => {
     if (ctx.mode !== "template") return [];
     return [

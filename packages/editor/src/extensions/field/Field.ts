@@ -1,5 +1,12 @@
 import { Node, mergeAttributes } from "@tiptap/core";
+import { ReactNodeViewRenderer } from "@tiptap/react";
+import { FieldView } from "./FieldView";
 import { generateNodeId } from "../../core/ids";
+import type { EditorMode } from "../../core/types";
+import type { FieldRegistry } from "../../drivers/field-registry";
+import type { PermissionPolicy, PolicyContext } from "../../core/policy";
+import type { EditorEventBus } from "../../core/events";
+import type { AuditLog } from "../../drivers/audit-log";
 
 export interface FieldAttrs {
   /** Stable per-instance id (one node = one id). */
@@ -18,6 +25,24 @@ export interface FieldAttrs {
   value: unknown;
 }
 
+export interface FieldExtensionOptions {
+  editorMode?: EditorMode;
+  registry?: FieldRegistry;
+  policy?: PermissionPolicy;
+  getPolicyContext?: () => PolicyContext;
+  events?: EditorEventBus;
+  audit?: AuditLog;
+}
+
+export interface FieldExtensionStorage {
+  editorMode: EditorMode;
+  registry?: FieldRegistry;
+  policy?: PermissionPolicy;
+  getPolicyContext?: () => PolicyContext;
+  events?: EditorEventBus;
+  audit?: AuditLog;
+}
+
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     field: {
@@ -28,6 +53,9 @@ declare module "@tiptap/core" {
       /** Update the value of the field at the current selection. */
       setFieldValue: (value: unknown) => ReturnType;
     };
+  }
+  interface Storage {
+    field: FieldExtensionStorage;
   }
 }
 
@@ -41,13 +69,32 @@ declare module "@tiptap/core" {
  * `FieldRegistry` driver. Drag/select are off — the user interacts
  * with the embedded control, not with the node frame.
  */
-export const Field = Node.create({
+export const Field = Node.create<FieldExtensionOptions, FieldExtensionStorage>({
   name: "field",
   group: "inline",
   inline: true,
   atom: true,
   selectable: true,
   draggable: false,
+
+  addOptions() {
+    return {};
+  },
+
+  addStorage(): FieldExtensionStorage {
+    return {
+      editorMode: this.options.editorMode ?? "document",
+      registry: this.options.registry,
+      policy: this.options.policy,
+      getPolicyContext: this.options.getPolicyContext,
+      events: this.options.events,
+      audit: this.options.audit,
+    };
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(FieldView);
+  },
 
   addAttributes() {
     return {

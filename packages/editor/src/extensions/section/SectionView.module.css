@@ -1,0 +1,129 @@
+.wrapper {
+  display: block;
+  margin: 1rem 0;
+  border: 1px solid var(--border, #e8e8e5);
+  border-radius: 8px;
+  background: var(--bg, #fff);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border, #e8e8e5);
+  background: var(--bg-subtle, #fafaf7);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  user-select: none;
+}
+
+.icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: var(--fg-muted, #6b6b68);
+  flex-shrink: 0;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg, #1f1f1c);
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.titlePlaceholder {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-faint, #a8a8a5);
+  line-height: 1.3;
+  font-style: italic;
+}
+
+.titleInput {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg, #1f1f1c);
+  padding: 0;
+  outline: none;
+}
+
+.titleInput::placeholder {
+  color: var(--fg-faint, #a8a8a5);
+  font-weight: 500;
+  font-style: italic;
+}
+
+.instruction {
+  font-size: 11px;
+  color: var(--fg-muted, #6b6b68);
+  line-height: 1.3;
+}
+
+.badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 4px;
+  background: var(--bg, #fff);
+  border: 1px solid var(--border, #e8e8e5);
+  color: var(--fg-muted, #6b6b68);
+  cursor: default;
+  user-select: none;
+}
+
+.badge[data-active="true"] {
+  background: var(--accent-soft, rgba(37, 99, 235, 0.12));
+  border-color: var(--accent, #2563eb);
+  color: var(--accent, #2563eb);
+}
+
+.badgeButton {
+  cursor: pointer;
+  font: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  font-weight: inherit;
+}
+
+.badgeButton:hover {
+  filter: brightness(0.97);
+}
+
+.content {
+  padding: 12px 16px;
+}
+
+.content > *:first-child {
+  margin-top: 0;
+}
+
+.content > *:last-child {
+  margin-bottom: 0;
+}

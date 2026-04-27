@@ -1,5 +1,8 @@
 import { Node, mergeAttributes } from "@tiptap/core";
+import { ReactNodeViewRenderer } from "@tiptap/react";
+import { EditableFieldView } from "./EditableFieldView";
 import { generateNodeId } from "../../core/ids";
+import type { EditorMode } from "../../core/types";
 
 export interface EditableFieldAttrs {
   /** Stable per-instance id, preserved across copy/paste & versioning. */
@@ -8,6 +11,14 @@ export interface EditableFieldAttrs {
   instruction: string | null;
   /** Optional placeholder shown when the region is empty. */
   placeholder: string | null;
+}
+
+export interface EditableFieldExtensionOptions {
+  editorMode?: EditorMode;
+}
+
+export interface EditableFieldExtensionStorage {
+  editorMode: EditorMode;
 }
 
 declare module "@tiptap/core" {
@@ -20,6 +31,9 @@ declare module "@tiptap/core" {
       ) => ReturnType;
     };
   }
+  interface Storage {
+    editableField: EditableFieldExtensionStorage;
+  }
 }
 
 /**
@@ -31,12 +45,27 @@ declare module "@tiptap/core" {
  * Inline plain-text fillables are not handled here — those are
  * rendered by `field` nodes with a host-supplied input control.
  */
-export const EditableField = Node.create({
+export const EditableField = Node.create<
+  EditableFieldExtensionOptions,
+  EditableFieldExtensionStorage
+>({
   name: "editableField",
   group: "block",
   content: "block+",
   defining: true,
   isolating: true,
+
+  addOptions() {
+    return {};
+  },
+
+  addStorage(): EditableFieldExtensionStorage {
+    return { editorMode: this.options.editorMode ?? "document" };
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(EditableFieldView);
+  },
 
   addAttributes() {
     return {

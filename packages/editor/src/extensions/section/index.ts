@@ -6,7 +6,7 @@ export const sectionModule: EditorExtensionModule = {
   name: "Section container",
   description:
     "Block-level container for grouping content into named regions. Sections carry a title, an instruction, and a `mutableContent` flag that decides whether end users may add blocks inside the section in document mode.",
-  tiptap: () => [Section],
+  tiptap: (ctx) => [Section.configure({ editorMode: ctx.mode })],
   toolbar: (ctx) => {
     if (ctx.mode !== "template") return [];
     return [

@@ -1,5 +1,8 @@
 import { Node, mergeAttributes } from "@tiptap/core";
+import { ReactNodeViewRenderer } from "@tiptap/react";
+import { SectionView } from "./SectionView";
 import { generateNodeId } from "../../core/ids";
+import type { EditorMode } from "../../core/types";
 
 export interface SectionAttrs {
   /** Stable per-instance id, preserved across copy/paste & versioning. */
@@ -17,6 +20,15 @@ export interface SectionAttrs {
   mutableContent: boolean;
 }
 
+export interface SectionExtensionOptions {
+  /** Mirrored into storage so the NodeView can render mode-specific UI. */
+  editorMode?: EditorMode;
+}
+
+export interface SectionExtensionStorage {
+  editorMode: EditorMode;
+}
+
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     section: {
@@ -24,6 +36,9 @@ declare module "@tiptap/core" {
       unsetSection: () => ReturnType;
       updateSection: (attrs: Partial<SectionAttrs>) => ReturnType;
     };
+  }
+  interface Storage {
+    section: SectionExtensionStorage;
   }
 }
 
@@ -38,12 +53,24 @@ declare module "@tiptap/core" {
  * obey `mutableContent`) live in the `TemplateStructureGuard` plugin,
  * not here. This file owns schema + commands only.
  */
-export const Section = Node.create({
+export const Section = Node.create<SectionExtensionOptions, SectionExtensionStorage>({
   name: "section",
   group: "block",
   content: "block+",
   defining: true,
   isolating: true,
+
+  addOptions() {
+    return {};
+  },
+
+  addStorage(): SectionExtensionStorage {
+    return { editorMode: this.options.editorMode ?? "document" };
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(SectionView);
+  },
 
   addAttributes() {
     return {

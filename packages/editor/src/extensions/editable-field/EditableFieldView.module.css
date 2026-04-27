@@ -1,0 +1,76 @@
+.wrapper {
+  display: block;
+  position: relative;
+  margin: 0.75rem 0;
+  border: 1px dashed var(--accent-soft-border, rgba(37, 99, 235, 0.35));
+  border-radius: 6px;
+  background: var(--editable-bg, rgba(37, 99, 235, 0.04));
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.wrapper:focus-within {
+  border-color: var(--accent, #2563eb);
+  background: var(--editable-bg-active, rgba(37, 99, 235, 0.07));
+}
+
+.chip {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  background: var(--bg, #fff);
+  color: var(--accent, #2563eb);
+  border: 1px solid var(--accent-soft-border, rgba(37, 99, 235, 0.35));
+  user-select: none;
+  pointer-events: none;
+}
+
+.chip svg {
+  width: 11px;
+  height: 11px;
+}
+
+.instruction {
+  display: block;
+  padding: 8px 12px 0 12px;
+  font-size: 11px;
+  color: var(--fg-muted, #6b6b68);
+  font-style: italic;
+  user-select: none;
+  pointer-events: none;
+}
+
+.content {
+  padding: 8px 12px;
+}
+
+.content > *:first-child {
+  margin-top: 0;
+}
+
+.content > *:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * Empty-state placeholder. Tiptap's `Placeholder` extension only
+ * targets the document's first empty paragraph. We render our own
+ * via CSS — when the only child is an empty <p>, show the placeholder.
+ */
+.content :global(p.is-editor-empty:first-child)::before,
+.content > p:only-child:empty::before {
+  content: attr(data-placeholder);
+  color: var(--fg-faint, #a8a8a5);
+  font-style: italic;
+  pointer-events: none;
+  height: 0;
+  float: left;
+}
