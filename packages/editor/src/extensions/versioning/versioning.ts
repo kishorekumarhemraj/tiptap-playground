@@ -7,6 +7,7 @@ import {
   type VersionStore,
 } from "../../drivers/version-store";
 import { TEMPLATE_GUARD_BYPASS_META } from "../template-guard/TemplateStructureGuard";
+import { TRACK_CHANGES_SUPPRESS_META } from "../track-changes/trackChanges";
 import type {
   PermissionPolicy,
   PolicyContext,
@@ -201,7 +202,11 @@ export const Versioning = Extension.create<VersioningOptions, VersioningStorage>
               state.doc.content.size,
               restored.content,
             );
+            // Bypass structural guard (already policy-gated above) and
+            // suppress track-changes so restored content is not wrapped
+            // in insertion marks, which would corrupt the snapshot.
             tr.setMeta(TEMPLATE_GUARD_BYPASS_META, true);
+            tr.setMeta(TRACK_CHANGES_SUPPRESS_META, true);
             view.dispatch(tr);
             options.events?.emit("version.restored", { snapshot });
             options.audit?.record({
