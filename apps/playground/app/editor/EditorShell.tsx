@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { JSONContent } from "@tiptap/core";
 import {
   defaultExtensionModules,
@@ -101,17 +101,20 @@ export function EditorShell() {
     }
   }, []);
 
-  // Drivers are created once and held in a ref so their references
-  // (especially the collaboration factory) stay stable across context
-  // rebuilds triggered by mode or readOnly toggles.
+  // Both drivers and the event bus are created once and held in refs
+  // so their identities stay stable across context rebuilds triggered
+  // by mode or readOnly toggles. Without this, the collaboration
+  // factory changes reference (breaking the session cache) and any
+  // external listeners bound to the old EventBus are silently orphaned.
   const driversRef = useRef(buildPlaygroundDrivers(DOCUMENT_ID));
+  const eventsRef = useRef(createEventBus());
 
   // Every concern the editor needs is assembled in one place: user,
   // drivers, policy, event bus. This mirrors how a real host app
   // would wire the editor - the components in the library never
   // build any of these on their own.
   const context = useMemo<EditorExtensionContext>(() => {
-    const events = createEventBus();
+    const events = eventsRef.current;
     const drivers = driversRef.current;
     const policy = defaultPermissionPolicy({
       evaluateCondition: (expression, ctx) => {
