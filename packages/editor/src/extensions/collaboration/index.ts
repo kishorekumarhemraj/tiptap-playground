@@ -7,26 +7,24 @@ import type {
   CollaborationProviderFactory,
 } from "../../drivers/collaboration-provider";
 
-// Session cache - the module never re-creates a Y.Doc for the same
-// (documentId, factory) pair so re-renders don't tear awareness down.
-const sessions = new WeakMap<
-  CollaborationProviderFactory,
-  Map<string, CollaborationProvider>
->();
+// Session cache keyed by documentId. Providers are created once per
+// document and reused regardless of factory reference identity. This
+// prevents context rebuilds (e.g. mode/readOnly toggle) from tearing
+// down and recreating the Y.Doc, which would reconnect all peers and
+// lose in-flight CRDT state.
+//
+// If the host genuinely needs to swap the transport for the same
+// documentId (unusual), call provider.destroy() externally first.
+const sessions = new Map<string, CollaborationProvider>();
 
 function resolveProvider(
   factory: CollaborationProviderFactory,
   documentId: string,
 ): CollaborationProvider | null {
-  let perFactory = sessions.get(factory);
-  if (!perFactory) {
-    perFactory = new Map();
-    sessions.set(factory, perFactory);
-  }
-  const cached = perFactory.get(documentId);
+  const cached = sessions.get(documentId);
   if (cached) return cached;
   const provider = factory({ documentId });
-  if (provider) perFactory.set(documentId, provider);
+  if (provider) sessions.set(documentId, provider);
   return provider;
 }
 
