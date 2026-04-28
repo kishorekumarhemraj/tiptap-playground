@@ -66,17 +66,34 @@ function computeLCS(left: string[], right: string[]): { leftIdx: number; rightId
 }
 
 /**
+ * Maximum number of top-level blocks diffed. Beyond this threshold the
+ * O(n*m) DP table would require > MAX²/2 cells; we truncate rather than
+ * hang the browser for pathologically large documents.
+ */
+const MAX_DIFF_BLOCKS = 500;
+
+/**
  * Block-level diff between two TipTap docs. We align top-level
  * children by `(type, text)` key using an LCS algorithm. Blocks present
  * in the LCS are `unchanged`, the rest are tagged `removed` / `added`.
  *
- * Doesn't do moves or sub-block edits - paragraphs that changed even
+ * Doesn't do moves or sub-block edits — paragraphs that changed even
  * a single character show up as one removal + one addition. That's
  * the right behaviour for a "what's different?" overview pane.
  */
 export function diffDocs(left: JSONContent, right: JSONContent): DiffResult {
-  const leftBlocks = left.content ?? [];
-  const rightBlocks = right.content ?? [];
+  const leftBlocks = (left.content ?? []).slice(0, MAX_DIFF_BLOCKS);
+  const rightBlocks = (right.content ?? []).slice(0, MAX_DIFF_BLOCKS);
+
+  // Fast path: identical JSON structure → all blocks are unchanged.
+  if (JSON.stringify(leftBlocks) === JSON.stringify(rightBlocks)) {
+    const leftEntries: BlockDiffEntry[] = leftBlocks.map((b, i) => ({
+      index: i,
+      key: blockKey(b, i),
+      status: "unchanged",
+    }));
+    return { left: leftEntries, right: [...leftEntries] };
+  }
 
   const leftKeys = leftBlocks.map((b, i) => blockKey(b, i));
   const rightKeys = rightBlocks.map((b, i) => blockKey(b, i));
