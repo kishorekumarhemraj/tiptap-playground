@@ -52,7 +52,9 @@ declare module "@tiptap/core" {
 
 const trackChangesPluginKey = new PluginKey("trackChanges");
 /** A meta key set on every transaction we generate so we never re-mark our own work. */
-const SUPPRESS_META = "trackChanges:suppress";
+export const TRACK_CHANGES_SUPPRESS_META = "trackChanges:suppress";
+/** @internal kept for backwards compat within this file */
+const SUPPRESS_META = TRACK_CHANGES_SUPPRESS_META;
 
 interface MarkRange {
   from: number;
@@ -88,9 +90,12 @@ function collectMarkRanges(
   return ranges;
 }
 
-/** Generate a short collision-resistant ID for a change run. */
+/** Generate a collision-resistant ID for a change run. */
 function newChangeId(): string {
-  return Math.random().toString(36).slice(2, 10);
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `chg_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 }
 
 function buildAttrs(
@@ -269,16 +274,14 @@ export const TrackChanges = Extension.create<
           const deletionType = state.schema.marks.deletion;
           if (!insertionType || !deletionType) return false;
 
-          // Role check: find the change author from the mark
-          const allRanges = [
-            ...collectMarkRanges(state.doc, insertionType, changeId),
-            ...collectMarkRanges(state.doc, deletionType, changeId),
-          ];
-          if (allRanges.length === 0) return false;
+          // Collect each type once — reuse for both the role check and
+          // the transaction, avoiding a third redundant document walk.
+          const insertions = collectMarkRanges(state.doc, insertionType, changeId);
+          const deletions = collectMarkRanges(state.doc, deletionType, changeId);
+          if (insertions.length === 0 && deletions.length === 0) return false;
 
-          const changeAuthorId = allRanges[0].attrs?.authorId as
-            | string
-            | null;
+          const changeAuthorId = (insertions[0] ?? deletions[0]).attrs
+            ?.authorId as string | null;
           if (!canActOnChange(storage?.author ?? null, changeAuthorId)) {
             options.events?.emit("permission.denied", {
               action: "change.accept",
@@ -288,13 +291,9 @@ export const TrackChanges = Extension.create<
             return false;
           }
 
-          // Accept: keep insertions (remove mark), delete deletions
-          const deletions = collectMarkRanges(state.doc, deletionType, changeId);
-          const insertions = collectMarkRanges(
-            state.doc,
-            insertionType,
-            changeId,
-          );
+          // Accept: keep insertions (remove mark), delete deletions.
+          // Process deletions back-to-front first so later positions
+          // stay stable after each physical removal.
           for (let i = deletions.length - 1; i >= 0; i--) {
             tr.delete(
               tr.mapping.map(deletions[i].from),
@@ -323,15 +322,14 @@ export const TrackChanges = Extension.create<
           const deletionType = state.schema.marks.deletion;
           if (!insertionType || !deletionType) return false;
 
-          const allRanges = [
-            ...collectMarkRanges(state.doc, insertionType, changeId),
-            ...collectMarkRanges(state.doc, deletionType, changeId),
-          ];
-          if (allRanges.length === 0) return false;
+          // Collect each type once — reuse for both the role check and
+          // the transaction.
+          const insertions = collectMarkRanges(state.doc, insertionType, changeId);
+          const deletions = collectMarkRanges(state.doc, deletionType, changeId);
+          if (insertions.length === 0 && deletions.length === 0) return false;
 
-          const changeAuthorId = allRanges[0].attrs?.authorId as
-            | string
-            | null;
+          const changeAuthorId = (insertions[0] ?? deletions[0]).attrs
+            ?.authorId as string | null;
           if (!canActOnChange(storage?.author ?? null, changeAuthorId)) {
             options.events?.emit("permission.denied", {
               action: "change.reject",
@@ -341,13 +339,9 @@ export const TrackChanges = Extension.create<
             return false;
           }
 
-          // Reject: delete insertions, restore deletions (remove mark)
-          const insertions = collectMarkRanges(
-            state.doc,
-            insertionType,
-            changeId,
-          );
-          const deletions = collectMarkRanges(state.doc, deletionType, changeId);
+          // Reject: delete insertions, restore deletions (remove mark).
+          // Process insertions back-to-front so later positions stay
+          // stable after each physical removal.
           for (let i = insertions.length - 1; i >= 0; i--) {
             tr.delete(
               tr.mapping.map(insertions[i].from),

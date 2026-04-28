@@ -46,6 +46,15 @@ export interface EditorEventBus {
     event: E,
     listener: EditorEventListener<E>,
   ): Unsubscribe;
+  /**
+   * Subscribe for a single firing. The listener is automatically
+   * removed after the first invocation. Returns an `Unsubscribe`
+   * so callers can cancel before the event fires (e.g. on unmount).
+   */
+  once<E extends EditorEventName>(
+    event: E,
+    listener: EditorEventListener<E>,
+  ): Unsubscribe;
   off<E extends EditorEventName>(
     event: E,
     listener: EditorEventListener<E>,
@@ -63,13 +72,37 @@ export function createEventBus(): EditorEventBus {
 
   return {
     on(event, listener) {
-      const set =
-        listeners.get(event) ?? new Set<(p: unknown) => void>();
+      let set = listeners.get(event);
+      if (!set) {
+        set = new Set<(p: unknown) => void>();
+        listeners.set(event, set);
+      }
       set.add(listener as (p: unknown) => void);
-      listeners.set(event, set);
       return () => {
-        set.delete(listener as (p: unknown) => void);
+        listeners.get(event)?.delete(listener as (p: unknown) => void);
       };
+    },
+    once(event, listener) {
+      // Wrap in a self-removing shim. The returned Unsubscribe lets
+      // callers cancel (e.g. component unmount) before the event fires.
+      let wrapper: ((p: unknown) => void) | null = null;
+      const unsubscribe = () => {
+        if (wrapper) {
+          listeners.get(event)?.delete(wrapper);
+          wrapper = null;
+        }
+      };
+      wrapper = (payload: unknown) => {
+        unsubscribe();
+        (listener as (p: unknown) => void)(payload);
+      };
+      let set = listeners.get(event);
+      if (!set) {
+        set = new Set();
+        listeners.set(event, set);
+      }
+      set.add(wrapper);
+      return unsubscribe;
     },
     off(event, listener) {
       listeners.get(event)?.delete(listener as (p: unknown) => void);

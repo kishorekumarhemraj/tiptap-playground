@@ -16,12 +16,20 @@ export function buildTiptapExtensions(
   modules: EditorExtensionModule[],
   ctx: EditorExtensionContext,
 ): AnyExtension[] {
-  const seen = new Set<string>();
+  const seen = new Map<string, string>(); // extensionName → moduleId
   const out: AnyExtension[] = [];
   for (const mod of activeModules(modules, ctx)) {
     for (const ext of mod.tiptap?.(ctx) ?? []) {
-      if (seen.has(ext.name)) continue;
-      seen.add(ext.name);
+      const owner = seen.get(ext.name);
+      if (owner) {
+        console.warn(
+          `[editor] Extension name conflict: "${ext.name}" from module "${mod.id}" ` +
+            `is already registered by module "${owner}". The second registration is ignored. ` +
+            "Check that two modules are not providing the same TipTap extension.",
+        );
+        continue;
+      }
+      seen.set(ext.name, mod.id);
       out.push(ext);
     }
   }

@@ -1,18 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Editor as TiptapEditor } from "@tiptap/react";
 import type { VersionSnapshot } from "../drivers/version-store";
+import type { VersionsPanelHandle } from "./EditorHandle";
 import styles from "./VersionsPanel.module.css";
 
 export interface VersionsPanelProps {
-  editor: TiptapEditor | null;
+  /** Handle obtained from the `onEditor` callback on `<Editor />`. */
+  editor: VersionsPanelHandle | null;
   diffSelection: { left: string | null; right: string | null };
   onChangeDiffSelection: (s: {
     left: string | null;
     right: string | null;
   }) => void;
   onCompare: (left: VersionSnapshot, right: VersionSnapshot) => void;
+  /**
+   * Called before a restore is executed. Return `false` (or a Promise
+   * resolving to `false`) to cancel. When omitted a `window.confirm`
+   * dialog is shown instead. Hosts in regulated contexts should supply
+   * their own confirmation UI so the confirmation itself is auditable.
+   */
+  onBeforeRestore?: (snapshot: VersionSnapshot) => boolean | Promise<boolean>;
   className?: string;
 }
 
@@ -21,15 +29,14 @@ export function VersionsPanel({
   diffSelection,
   onChangeDiffSelection,
   onCompare,
+  onBeforeRestore,
   className,
 }: VersionsPanelProps) {
   const [snapshots, setSnapshots] = useState<VersionSnapshot[]>([]);
 
   useEffect(() => {
     if (!editor) return;
-    const storage = editor.storage.versioning;
-    if (!storage) return;
-    return storage.subscribe(setSnapshots);
+    return editor.subscribe(setSnapshots);
   }, [editor]);
 
   if (!editor) {
@@ -54,6 +61,17 @@ export function VersionsPanel({
     if (!left) onChangeDiffSelection({ left: id, right });
     else if (!right) onChangeDiffSelection({ left, right: id });
     else onChangeDiffSelection({ left: id, right });
+  };
+
+  const handleRestore = async (snapshot: VersionSnapshot) => {
+    const confirm_ =
+      onBeforeRestore ??
+      ((s: VersionSnapshot) =>
+        window.confirm(
+          `Restore "${s.label}"?\n\nThis will replace the current document. This action cannot be undone.`,
+        ));
+    const ok = await confirm_(snapshot);
+    if (ok) editor?.restoreVersion(snapshot.id);
   };
 
   const findSnapshot = (id: string | null) =>
@@ -112,18 +130,14 @@ export function VersionsPanel({
                   <button
                     type="button"
                     className={styles.linkButton}
-                    onClick={() =>
-                      editor.chain().focus().restoreVersion(s.id).run()
-                    }
+                    onClick={() => void handleRestore(s)}
                   >
                     Restore
                   </button>
                   <button
                     type="button"
                     className={styles.linkButton}
-                    onClick={() =>
-                      editor.chain().focus().deleteVersion(s.id).run()
-                    }
+                    onClick={() => editor.deleteVersion(s.id)}
                   >
                     Delete
                   </button>

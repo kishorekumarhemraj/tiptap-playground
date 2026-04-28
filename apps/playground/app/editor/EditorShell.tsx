@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { Editor as TiptapEditor } from "@tiptap/react";
 import type { JSONContent } from "@tiptap/core";
 import {
   defaultExtensionModules,
@@ -16,6 +15,7 @@ import {
   VersionsPanel,
   DiffView,
   type DiffPaneVersion,
+  type VersionsPanelHandle,
 } from "@tiptap-playground/editor/react";
 import { buildPlaygroundDrivers } from "./drivers";
 import styles from "./EditorShell.module.css";
@@ -76,7 +76,7 @@ function loadInitialContent(): JSONContent | string {
 export function EditorShell() {
   const [readOnly, setReadOnly] = useState(false);
   const [mode, setMode] = useState<EditorMode>("template");
-  const [editor, setEditor] = useState<TiptapEditor | null>(null);
+  const [editor, setEditor] = useState<VersionsPanelHandle | null>(null);
   const [diffSelection, setDiffSelection] = useState<{
     left: string | null;
     right: string | null;
@@ -101,13 +101,21 @@ export function EditorShell() {
     }
   }, []);
 
+  // Both drivers and the event bus are created once and held in refs
+  // so their identities stay stable across context rebuilds triggered
+  // by mode or readOnly toggles. Without this, the collaboration
+  // factory changes reference (breaking the session cache) and any
+  // external listeners bound to the old EventBus are silently orphaned.
+  const driversRef = useRef(buildPlaygroundDrivers(DOCUMENT_ID));
+  const eventsRef = useRef(createEventBus());
+
   // Every concern the editor needs is assembled in one place: user,
   // drivers, policy, event bus. This mirrors how a real host app
   // would wire the editor - the components in the library never
   // build any of these on their own.
   const context = useMemo<EditorExtensionContext>(() => {
-    const events = createEventBus();
-    const drivers = buildPlaygroundDrivers(DOCUMENT_ID);
+    const events = eventsRef.current;
+    const drivers = driversRef.current;
     const policy = defaultPermissionPolicy({
       evaluateCondition: (expression, ctx) => {
         // Trivial evaluator - a real host would parse the expression
@@ -140,9 +148,12 @@ export function EditorShell() {
     };
   }, [readOnly, mode]);
 
-  const handleEditor = useCallback((next: TiptapEditor | null) => {
-    setEditor(next);
-  }, []);
+  const handleEditor = useCallback(
+    (_handle: unknown, versionsPanelHandle: VersionsPanelHandle | null) => {
+      setEditor(versionsPanelHandle);
+    },
+    [],
+  );
 
   const collabEnabled = !!context.drivers.collaboration;
 

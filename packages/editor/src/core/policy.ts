@@ -148,7 +148,19 @@ const ALLOW: PolicyDecision = { allowed: true };
 export function defaultPermissionPolicy(overrides: {
   evaluateCondition?: (expression: string, ctx: PolicyContext) => boolean;
 } = {}): PermissionPolicy {
-  const evaluate = overrides.evaluateCondition ?? (() => false);
+  const evaluate =
+    overrides.evaluateCondition ??
+    ((expression: string, ctx: PolicyContext) => {
+      if (ctx.mode === "document") {
+        console.warn(
+          `[editor] evaluateCondition("${expression}") called with the built-in no-op evaluator. ` +
+            "Conditional field visibility will always be false. " +
+            "Supply an evaluateCondition override to defaultPermissionPolicy() " +
+            "or implement PermissionPolicy to enable condition evaluation.",
+        );
+      }
+      return false;
+    });
 
   const denyDocOnly = (action: string): PolicyDecision => ({
     allowed: false,

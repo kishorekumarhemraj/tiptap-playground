@@ -64,11 +64,16 @@ export function SectionView({
               value={draftTitle}
               placeholder="Section title"
               aria-label="Section title"
-              onChange={(e) => {
-                setDraftTitle(e.target.value);
-                updateAttributes({
-                  title: e.target.value.trim() ? e.target.value : null,
-                });
+              onChange={(e) => setDraftTitle(e.target.value)}
+              onBlur={(e) => {
+                // Commit to ProseMirror only on blur, not on every
+                // keystroke. Per-keystroke updateAttributes creates one
+                // history entry per character, making undo unbearable.
+                const next = e.target.value.trim() || null;
+                const current = (node.attrs.title as string | null) ?? null;
+                if (next !== current) {
+                  updateAttributes({ title: next });
+                }
               }}
             />
             {instruction && (

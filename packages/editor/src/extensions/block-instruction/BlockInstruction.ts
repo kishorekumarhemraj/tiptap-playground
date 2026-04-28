@@ -36,15 +36,24 @@ const STYLE_RULES = `
 }
 `;
 
-function ensureStyles() {
+let styleRefCount = 0;
+
+function attachStyles() {
   if (typeof document === "undefined") return;
-  let style = document.getElementById(STYLE_TAG_ID);
-  if (!style) {
-    style = document.createElement("style");
-    style.id = STYLE_TAG_ID;
-    document.head.appendChild(style);
-  }
+  styleRefCount++;
+  if (document.getElementById(STYLE_TAG_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_TAG_ID;
   style.textContent = STYLE_RULES;
+  document.head.appendChild(style);
+}
+
+function detachStyles() {
+  if (typeof document === "undefined") return;
+  styleRefCount = Math.max(0, styleRefCount - 1);
+  if (styleRefCount === 0) {
+    document.getElementById(STYLE_TAG_ID)?.remove();
+  }
 }
 
 /**
@@ -113,47 +122,64 @@ export const BlockInstruction = Extension.create({
   },
 
   addProseMirrorPlugins() {
-    ensureStyles();
+    attachStyles();
     const editor = this.editor;
+
+    function buildDecoSet(
+      doc: import("@tiptap/pm/model").Node,
+      show: boolean,
+    ): DecorationSet {
+      if (!show) return DecorationSet.empty;
+      const decos: Decoration[] = [];
+      doc.forEach((node, pos) => {
+        const instruction = node.attrs?.instruction as string | null;
+        if (!instruction) return;
+        decos.push(
+          Decoration.widget(
+            pos,
+            () => {
+              const el = document.createElement("div");
+              el.className = "tpe-instruction-widget";
+              el.setAttribute("contenteditable", "false");
+              el.setAttribute("aria-label", `Instruction: ${instruction}`);
+              el.textContent = `💡 ${instruction}`;
+              return el;
+            },
+            { side: -1, key: `instruction:${pos}:${instruction}` },
+          ),
+        );
+      });
+      return DecorationSet.create(doc, decos);
+    }
 
     return [
       new Plugin({
         key: instructionKey,
+        view: () => ({ destroy: detachStyles }),
+        // Stateful decoration set: on transactions that don't change the
+        // doc, map existing decoration positions through the step mapping
+        // (O(decorations)) instead of re-walking the whole doc (O(nodes)).
+        // Rebuild only when the doc changes or the toggle meta fires.
+        state: {
+          init(_, { doc }) {
+            return buildDecoSet(
+              doc,
+              editor.storage.blockInstruction?.showInstructions ?? true,
+            );
+          },
+          apply(tr, set) {
+            const toggleMeta = tr.getMeta(instructionKey);
+            const show =
+              editor.storage.blockInstruction?.showInstructions ?? true;
+            if (toggleMeta !== undefined || tr.docChanged) {
+              return buildDecoSet(tr.doc, show);
+            }
+            return set.map(tr.mapping, tr.doc);
+          },
+        },
         props: {
           decorations(state) {
-            if (!editor.storage.blockInstruction?.showInstructions) {
-              return DecorationSet.empty;
-            }
-
-            const decos: Decoration[] = [];
-
-            state.doc.forEach((node, pos) => {
-              const instruction = node.attrs?.instruction as string | null;
-              if (!instruction) return;
-
-              // Widget at the block's start position (pos). With side:-1
-              // the widget appears just before the block element, so it
-              // renders as a bar above the block's own content.
-              decos.push(
-                Decoration.widget(
-                  pos,
-                  () => {
-                    const el = document.createElement("div");
-                    el.className = "tpe-instruction-widget";
-                    el.setAttribute("contenteditable", "false");
-                    el.setAttribute("aria-label", `Instruction: ${instruction}`);
-                    el.textContent = `💡 ${instruction}`;
-                    return el;
-                  },
-                  {
-                    side: -1,
-                    key: `instruction:${pos}:${instruction}`,
-                  },
-                ),
-              );
-            });
-
-            return DecorationSet.create(state.doc, decos);
+            return instructionKey.getState(state) ?? DecorationSet.empty;
           },
         },
       }),

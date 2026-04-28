@@ -18,6 +18,7 @@ export const templateGuardModule: EditorExtensionModule = {
       events: ctx.events,
       audit: ctx.drivers.auditLog,
       editorMode: ctx.mode,
+      readOnly: ctx.readOnly,
     }),
   ],
 };
