@@ -17,10 +17,19 @@ export interface TemplateStructureGuardOptions {
   events?: EditorEventBus;
   audit?: AuditLog;
   /**
-   * Editor-level mode. The guard only enforces when this is
-   * `"document"` — template authoring is unrestricted.
+   * Editor-level mode. The guard enforces structural rules in
+   * `"document"` mode. In `"template"` mode the guard is inactive
+   * unless `readOnly` is also true, in which case all doc changes
+   * are blocked (programmatic commands included).
    */
   editorMode?: EditorMode;
+  /**
+   * When true the editor is read-only regardless of mode. The guard
+   * blocks all document-changing transactions (except those carrying
+   * `TEMPLATE_GUARD_BYPASS_META`) to prevent programmatic writes
+   * that bypass the TipTap `editable: false` prop.
+   */
+  readOnly?: boolean;
 }
 
 export const TEMPLATE_GUARD_BYPASS_META = "templateGuardBypass";
@@ -62,14 +71,44 @@ export const TemplateStructureGuard =
 
     addProseMirrorPlugins() {
       const options = this.options;
-      if (options.editorMode !== "document") return [];
+      // Register the guard when:
+      //   (a) document mode — structural rules are always enforced, or
+      //   (b) readOnly — block all programmatic writes regardless of mode
+      if (options.editorMode !== "document" && !options.readOnly) return [];
 
       return [
         new Plugin({
           key: guardPluginKey,
           filterTransaction: (tr: Transaction, state: EditorState) => {
             if (!tr.docChanged) return true;
-            if (tr.getMeta(TEMPLATE_GUARD_BYPASS_META) === true) return true;
+
+            if (tr.getMeta(TEMPLATE_GUARD_BYPASS_META) === true) {
+              // Privileged bypass — write an audit entry so every
+              // structural override is traceable.
+              const ctx = options.getPolicyContext?.();
+              if (ctx) {
+                options.audit?.record({
+                  type: "structure.bypass",
+                  at: Date.now(),
+                  actor: { id: ctx.user.id, name: ctx.user.name },
+                  documentId: ctx.documentId,
+                  summary: "Template guard bypassed by privileged operation",
+                  payload: {},
+                });
+              }
+              return true;
+            }
+
+            // In readOnly mode (template or document) block everything
+            // that isn't a bypass. No structural analysis needed.
+            if (options.readOnly) {
+              options.events?.emit("permission.denied", {
+                action: "content.edit",
+                reason: "Editor is read-only",
+              });
+              return false;
+            }
+
             // Yjs-driven transactions originate from a remote peer
             // whose own guard already validated. Local guards can't
             // veto without diverging the shared state.
