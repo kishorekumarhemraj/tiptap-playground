@@ -43,18 +43,21 @@ export function SectionView({
   const sectionId = (node.attrs.id as string | null) ?? null;
 
   const [draftTitle, setDraftTitle] = useState<string>(title ?? "");
+  const [hovered, setHovered] = useState(false);
 
   return (
     <NodeViewWrapper
       as="section"
-      className={styles.wrapper}
+      className={`${styles.wrapper} ${isTemplate ? styles.templateMode : styles.documentMode}`}
       data-section-id={sectionId ?? undefined}
       data-mutable-content={mutableContent ? "true" : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      <header className={styles.header} contentEditable={false}>
-        <SectionIcon />
-        <div className={styles.titleArea}>
-          {isTemplate ? (
+      {isTemplate ? (
+        <header className={styles.header} contentEditable={false}>
+          <SectionIcon />
+          <div className={styles.titleArea}>
             <input
               className={styles.titleInput}
               type="text"
@@ -68,17 +71,11 @@ export function SectionView({
                 });
               }}
             />
-          ) : title ? (
-            <span className={styles.title}>{title}</span>
-          ) : (
-            <span className={styles.titlePlaceholder}>Untitled section</span>
-          )}
-          {instruction && (
-            <span className={styles.instruction}>{instruction}</span>
-          )}
-        </div>
-        <div className={styles.badges}>
-          {isTemplate ? (
+            {instruction && (
+              <span className={styles.instruction}>{instruction}</span>
+            )}
+          </div>
+          <div className={styles.badges}>
             <button
               type="button"
               className={`${styles.badge} ${styles.badgeButton}`}
@@ -94,17 +91,24 @@ export function SectionView({
             >
               {mutableContent ? "Mutable" : "Fixed"}
             </button>
-          ) : mutableContent ? (
-            <span
-              className={styles.badge}
-              data-active="true"
-              title="You may add blocks inside this section"
-            >
-              Open
+          </div>
+        </header>
+      ) : (
+        /* Document mode: show a floating label pill on hover */
+        hovered && (
+          <div className={styles.hoverLabel} contentEditable={false}>
+            <SectionIcon />
+            <span className={styles.hoverLabelText}>
+              {title ?? "Untitled section"}
             </span>
-          ) : null}
-        </div>
-      </header>
+            {mutableContent && (
+              <span className={styles.hoverBadge} title="You may add blocks inside this section">
+                Open
+              </span>
+            )}
+          </div>
+        )
+      )}
       <NodeViewContent className={styles.content} />
     </NodeViewWrapper>
   );

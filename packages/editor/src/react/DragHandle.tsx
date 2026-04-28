@@ -56,7 +56,14 @@ export function TemplateDragHandle({ editor, active }: TemplateDragHandleProps) 
         placement: "left-start",
         strategy: "absolute",
       },
-      nestedOptions: normalizeNestedOptions(true),
+      nestedOptions: normalizeNestedOptions({
+        // Default strength (500) × depth gives nested blocks at depth 2 a
+        // deduction equal to BASE_SCORE (1000), scoring them to 0 and making
+        // them unselectable when the cursor is near the left edge — exactly
+        // where the handle sits. Lower strength preserves the edge-preference
+        // for parent containers while still letting nested blocks be grabbed.
+        edgeDetection: { edges: ["left", "top"], threshold: 12, strength: 200 },
+      }),
     });
 
     editor.registerPlugin(initPlugin.plugin);
