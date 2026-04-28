@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Editor as TiptapEditor } from "@tiptap/react";
 import type { VersionSnapshot } from "../drivers/version-store";
+import type { VersionsPanelHandle } from "./EditorHandle";
 import styles from "./VersionsPanel.module.css";
 
 export interface VersionsPanelProps {
-  editor: TiptapEditor | null;
+  /** Handle obtained from the `onEditor` callback on `<Editor />`. */
+  editor: VersionsPanelHandle | null;
   diffSelection: { left: string | null; right: string | null };
   onChangeDiffSelection: (s: {
     left: string | null;
@@ -27,9 +28,7 @@ export function VersionsPanel({
 
   useEffect(() => {
     if (!editor) return;
-    const storage = editor.storage.versioning;
-    if (!storage) return;
-    return storage.subscribe(setSnapshots);
+    return editor.subscribe(setSnapshots);
   }, [editor]);
 
   if (!editor) {
@@ -112,18 +111,14 @@ export function VersionsPanel({
                   <button
                     type="button"
                     className={styles.linkButton}
-                    onClick={() =>
-                      editor.chain().focus().restoreVersion(s.id).run()
-                    }
+                    onClick={() => editor.restoreVersion(s.id)}
                   >
                     Restore
                   </button>
                   <button
                     type="button"
                     className={styles.linkButton}
-                    onClick={() =>
-                      editor.chain().focus().deleteVersion(s.id).run()
-                    }
+                    onClick={() => editor.deleteVersion(s.id)}
                   >
                     Delete
                   </button>

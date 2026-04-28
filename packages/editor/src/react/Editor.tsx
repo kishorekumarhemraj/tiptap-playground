@@ -3,7 +3,6 @@
 import {
   EditorContent,
   useEditor,
-  type Editor as TiptapEditor,
   type JSONContent,
 } from "@tiptap/react";
 import { useEffect, useMemo } from "react";
@@ -17,7 +16,15 @@ import type {
 } from "../core/types";
 import { Toolbar } from "./Toolbar";
 import { TemplateDragHandle } from "./DragHandle";
+import {
+  toEditorHandle,
+  toVersionsPanelHandle,
+  type EditorHandle,
+  type VersionsPanelHandle,
+} from "./EditorHandle";
 import styles from "./Editor.module.css";
+
+export type { EditorHandle, VersionsPanelHandle } from "./EditorHandle";
 
 export interface EditorProps {
   modules: EditorExtensionModule[];
@@ -25,8 +32,19 @@ export interface EditorProps {
   /** Initial content: HTML string, JSON, or undefined. */
   initialContent?: string | JSONContent;
   onUpdateJSON?: (json: JSONContent) => void;
-  /** Called whenever the underlying TipTap editor instance changes. */
-  onEditor?: (editor: TiptapEditor | null) => void;
+  /**
+   * Delivers a read-only handle to the host. Use this to read
+   * document state (content, active marks, isEmpty). For versioning
+   * and other mutations, pass the `VersionsPanelHandle` (also
+   * delivered here) to `VersionsPanel`.
+   *
+   * Avoid reaching into the raw TipTap editor via other means —
+   * direct command calls bypass the policy engine.
+   */
+  onEditor?: (
+    handle: EditorHandle | null,
+    versionsPanelHandle: VersionsPanelHandle | null,
+  ) => void;
   /** Hide the built-in toolbar and let the host render its own. */
   hideToolbar?: boolean;
   /** Extra className applied to the editor root. */
@@ -80,9 +98,14 @@ export function Editor({
   );
 
   useEffect(() => {
-    onEditor?.(editor);
+    if (!onEditor) return;
+    if (editor) {
+      onEditor(toEditorHandle(editor), toVersionsPanelHandle(editor));
+    } else {
+      onEditor(null, null);
+    }
     return () => {
-      onEditor?.(null);
+      onEditor(null, null);
     };
   }, [editor, onEditor]);
 

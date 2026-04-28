@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { Editor as TiptapEditor } from "@tiptap/react";
 import type { JSONContent } from "@tiptap/core";
 import {
   defaultExtensionModules,
@@ -16,6 +15,7 @@ import {
   VersionsPanel,
   DiffView,
   type DiffPaneVersion,
+  type VersionsPanelHandle,
 } from "@tiptap-playground/editor/react";
 import { buildPlaygroundDrivers } from "./drivers";
 import styles from "./EditorShell.module.css";
@@ -76,7 +76,7 @@ function loadInitialContent(): JSONContent | string {
 export function EditorShell() {
   const [readOnly, setReadOnly] = useState(false);
   const [mode, setMode] = useState<EditorMode>("template");
-  const [editor, setEditor] = useState<TiptapEditor | null>(null);
+  const [editor, setEditor] = useState<VersionsPanelHandle | null>(null);
   const [diffSelection, setDiffSelection] = useState<{
     left: string | null;
     right: string | null;
@@ -140,9 +140,12 @@ export function EditorShell() {
     };
   }, [readOnly, mode]);
 
-  const handleEditor = useCallback((next: TiptapEditor | null) => {
-    setEditor(next);
-  }, []);
+  const handleEditor = useCallback(
+    (_handle: unknown, versionsPanelHandle: VersionsPanelHandle | null) => {
+      setEditor(versionsPanelHandle);
+    },
+    [],
+  );
 
   const collabEnabled = !!context.drivers.collaboration;
 

@@ -6,7 +6,7 @@
  * core library doesn't import this module at all.
  */
 export { Editor } from "./react/Editor";
-export type { EditorProps } from "./react/Editor";
+export type { EditorProps, EditorHandle, VersionsPanelHandle } from "./react/Editor";
 
 export { TemplateDragHandle } from "./react/DragHandle";
 export type { TemplateDragHandleProps } from "./react/DragHandle";
