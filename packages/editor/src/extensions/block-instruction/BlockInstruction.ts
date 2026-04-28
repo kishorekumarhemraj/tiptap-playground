@@ -36,15 +36,24 @@ const STYLE_RULES = `
 }
 `;
 
-function ensureStyles() {
+let styleRefCount = 0;
+
+function attachStyles() {
   if (typeof document === "undefined") return;
-  let style = document.getElementById(STYLE_TAG_ID);
-  if (!style) {
-    style = document.createElement("style");
-    style.id = STYLE_TAG_ID;
-    document.head.appendChild(style);
-  }
+  styleRefCount++;
+  if (document.getElementById(STYLE_TAG_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_TAG_ID;
   style.textContent = STYLE_RULES;
+  document.head.appendChild(style);
+}
+
+function detachStyles() {
+  if (typeof document === "undefined") return;
+  styleRefCount = Math.max(0, styleRefCount - 1);
+  if (styleRefCount === 0) {
+    document.getElementById(STYLE_TAG_ID)?.remove();
+  }
 }
 
 /**
@@ -113,12 +122,13 @@ export const BlockInstruction = Extension.create({
   },
 
   addProseMirrorPlugins() {
-    ensureStyles();
+    attachStyles();
     const editor = this.editor;
 
     return [
       new Plugin({
         key: instructionKey,
+        view: () => ({ destroy: detachStyles }),
         props: {
           decorations(state) {
             if (!editor.storage.blockInstruction?.showInstructions) {

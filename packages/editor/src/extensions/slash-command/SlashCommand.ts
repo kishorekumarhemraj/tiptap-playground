@@ -92,13 +92,24 @@ const STYLE_RULES = `
 }
 `;
 
-function ensureStyles() {
+let styleRefCount = 0;
+
+function attachStyles() {
   if (typeof document === "undefined") return;
+  styleRefCount++;
   if (document.getElementById(STYLE_TAG_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_TAG_ID;
   style.textContent = STYLE_RULES;
   document.head.appendChild(style);
+}
+
+function detachStyles() {
+  if (typeof document === "undefined") return;
+  styleRefCount = Math.max(0, styleRefCount - 1);
+  if (styleRefCount === 0) {
+    document.getElementById(STYLE_TAG_ID)?.remove();
+  }
 }
 
 /**
@@ -159,7 +170,7 @@ function createSlashPlugin(
       },
     },
     view(view) {
-      ensureStyles();
+      attachStyles();
       const menu = document.createElement("div");
       menu.className = "tpe-slash-menu";
       menu.setAttribute("data-visible", "false");
@@ -196,6 +207,7 @@ function createSlashPlugin(
         destroy() {
           menu.removeEventListener("mousedown", onClick);
           menu.remove();
+          detachStyles();
         },
       };
     },
