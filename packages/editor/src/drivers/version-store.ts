@@ -92,8 +92,14 @@ export function localStorageVersionStore(documentId: string): VersionStore {
     if (typeof window === "undefined") return;
     try {
       window.localStorage.setItem(key, JSON.stringify(next));
-    } catch {
-      /* quota or private mode - non-fatal */
+    } catch (err) {
+      // Quota exceeded or private mode — notify listeners with the
+      // last successfully persisted state so the UI stays consistent,
+      // then rethrow so callers (e.g. versioning extension) know the
+      // write failed and can emit an error event instead of a success.
+      const persisted = read();
+      for (const l of listeners) l([...persisted]);
+      throw err;
     }
     const view = [...next];
     for (const l of listeners) l(view);

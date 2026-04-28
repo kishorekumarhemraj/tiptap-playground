@@ -150,25 +150,38 @@ export const Versioning = Extension.create<VersioningOptions, VersioningStorage>
             json: editor.getJSON() as JSONContent,
             metadata: signature ? { signature } : undefined,
           };
-          void Promise.resolve(options.store.put(snapshot)).then(() => {
-            (
-              editor.storage.versioning as VersioningStorage & {
-                _notify: () => Promise<void>;
-              }
-            )._notify();
-            options.events?.emit("version.saved", { snapshot, signature });
-            options.audit?.record({
-              type: "version.saved",
-              at: Date.now(),
-              actor: ctx
-                ? { id: ctx.user.id, name: ctx.user.name }
-                : { id: "?", name: "?" },
-              documentId: ctx?.documentId ?? "?",
-              summary: `Saved version "${snapshot.label}"`,
-              payload: { id: snapshot.id, label: snapshot.label },
-              signature,
+          void Promise.resolve(options.store.put(snapshot))
+            .then(() => {
+              (
+                editor.storage.versioning as VersioningStorage & {
+                  _notify: () => Promise<void>;
+                }
+              )._notify();
+              options.events?.emit("version.saved", { snapshot, signature });
+              options.audit?.record({
+                type: "version.saved",
+                at: Date.now(),
+                actor: ctx
+                  ? { id: ctx.user.id, name: ctx.user.name }
+                  : { id: "?", name: "?" },
+                documentId: ctx?.documentId ?? "?",
+                summary: `Saved version "${snapshot.label}"`,
+                payload: { id: snapshot.id, label: snapshot.label },
+                signature,
+              });
+            })
+            .catch((err: unknown) => {
+              // Storage write failed (e.g. QuotaExceededError). Emit a
+              // denial event so the host can surface the error to the user
+              // instead of silently claiming the save succeeded.
+              const reason =
+                err instanceof Error ? err.message : "Storage write failed";
+              options.events?.emit("permission.denied", {
+                action: "version.save",
+                reason,
+              });
+              console.error("[editor] version.save failed:", err);
             });
-          });
           return true;
         },
 
