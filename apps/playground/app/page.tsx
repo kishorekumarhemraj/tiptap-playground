@@ -1,5 +1,6 @@
 import { EditorShell } from "./editor/EditorShell";
 import styles from "./page.module.css";
+import Link from "next/link";
 
 export default function Page() {
   return (
@@ -7,7 +8,7 @@ export default function Page() {
       <header className={styles.hero}>
         <div className={styles.heroInner}>
           <div className={styles.badge}>@tiptap-playground/editor</div>
-          <h1 className={styles.title}>TipTap Playground</h1>
+          <h1 className={styles.title}>Block Editor Playground</h1>
           <p className={styles.subtitle}>
             Template-based editor with sections, editable regions, host-driven
             form fields, collaboration, track changes, versioning, and
@@ -16,6 +17,9 @@ export default function Page() {
             flows through host-supplied drivers and a{" "}
             <code>PermissionPolicy</code>.
           </p>
+          <Link href="/pages-demo" className={styles.demoLink}>
+            Also see: Pages Demo →
+          </Link>
         </div>
       </header>
 
