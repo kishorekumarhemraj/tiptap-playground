@@ -164,7 +164,33 @@ export const Field = Node.create<FieldExtensionOptions, FieldExtensionStorage>({
         ({ commands, state }) => {
           const node = state.selection.$from.nodeAfter;
           if (!node || node.type.name !== this.name) return false;
-          return commands.updateAttributes(this.name, { value });
+          const prev = node.attrs.value;
+          const nodeId = (node.attrs.id as string | null) ?? null;
+          const fieldId = (node.attrs.fieldId as string | null) ?? "";
+          const ok = commands.updateAttributes(this.name, { value });
+          if (ok) {
+            const storage = this.editor?.storage.field as
+              | FieldExtensionStorage
+              | undefined;
+            storage?.events?.emit("field.value.changed", {
+              id: nodeId,
+              fieldId,
+              from: prev,
+              to: value,
+            });
+            if (storage?.audit && storage?.getPolicyContext) {
+              const ctx = storage.getPolicyContext();
+              storage.audit.record({
+                type: "field.value.changed",
+                at: Date.now(),
+                actor: { id: ctx.user.id, name: ctx.user.name },
+                documentId: ctx.documentId,
+                summary: `Field "${fieldId}" updated (programmatic)`,
+                payload: { id: nodeId, fieldId, from: prev, to: value },
+              });
+            }
+          }
+          return ok;
         },
     };
   },
