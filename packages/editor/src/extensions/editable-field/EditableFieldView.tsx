@@ -27,6 +27,7 @@ export function EditableFieldView({ node, editor }: NodeViewProps) {
     editor.storage as { editableField?: EditableFieldExtensionStorage }
   ).editableField;
   const editorMode = storage?.editorMode ?? "document";
+  const isTemplate = editorMode === "template" && editor.isEditable;
   const instruction = (node.attrs.instruction as string | null) ?? null;
   const placeholder =
     (node.attrs.placeholder as string | null) ??
@@ -35,7 +36,7 @@ export function EditableFieldView({ node, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper
       as="div"
-      className={styles.wrapper}
+      className={`${styles.wrapper} ${isTemplate ? styles.templateMode : styles.documentMode}`}
       data-editable-field-id={(node.attrs.id as string | null) ?? undefined}
       data-placeholder={placeholder}
     >

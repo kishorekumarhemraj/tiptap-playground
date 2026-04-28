@@ -2,17 +2,50 @@
   display: block;
   position: relative;
   margin: 0.75rem 0;
-  border: 1px dashed var(--accent-soft-border, rgba(37, 99, 235, 0.35));
+  border: 1px dashed transparent;
   border-radius: 6px;
-  background: var(--editable-bg, rgba(37, 99, 235, 0.04));
-  transition: border-color 120ms ease, background-color 120ms ease;
+  background: transparent;
+  transition: border-color 150ms ease, background-color 150ms ease;
 }
 
-.wrapper:focus-within {
+/* ── Template mode: always show border + chip ────────────────────── */
+.templateMode {
+  border-color: var(--accent-soft-border, rgba(37, 99, 235, 0.35));
+  background: var(--editable-bg, rgba(37, 99, 235, 0.04));
+}
+
+.templateMode:focus-within {
   border-color: var(--accent, #2563eb);
   background: var(--editable-bg-active, rgba(37, 99, 235, 0.07));
 }
 
+.templateMode .chip {
+  opacity: 1;
+}
+
+/* ── Document mode: reveal on hover or focus ─────────────────────── */
+.documentMode:hover,
+.documentMode:focus-within {
+  border-color: var(--accent-soft-border, rgba(37, 99, 235, 0.35));
+  background: var(--editable-bg, rgba(37, 99, 235, 0.04));
+}
+
+.documentMode:focus-within {
+  border-color: var(--accent, #2563eb);
+  background: var(--editable-bg-active, rgba(37, 99, 235, 0.07));
+}
+
+.documentMode .chip {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.documentMode:hover .chip,
+.documentMode:focus-within .chip {
+  opacity: 1;
+}
+
+/* ── Chip ─────────────────────────────────────────────────────────── */
 .chip {
   position: absolute;
   top: -10px;

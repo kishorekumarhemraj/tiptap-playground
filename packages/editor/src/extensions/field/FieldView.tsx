@@ -39,6 +39,14 @@ export function FieldView({ node, editor, updateAttributes }: NodeViewProps) {
   const def = readDef(storage, fieldId);
   const readOnly = !editor.isEditable || editorMode === "template";
 
+  // Optimistic local value so controlled inputs update instantly before
+  // TipTap's async NodeView update cycle completes. Stays in sync with
+  // node.attrs.value for external changes (version restore, collab, etc.).
+  const [displayValue, setDisplayValue] = useState<unknown>(value);
+  useEffect(() => {
+    setDisplayValue(value);
+  }, [value]);
+
   const commitValue = (next: unknown) => {
     if (storage?.policy && storage?.getPolicyContext) {
       const ctx = storage.getPolicyContext();
@@ -56,6 +64,9 @@ export function FieldView({ node, editor, updateAttributes }: NodeViewProps) {
         return;
       }
     }
+    // Apply optimistic update so the controlled component reflects the
+    // new value immediately, independent of TipTap's re-render timing.
+    setDisplayValue(next);
     updateAttributes({ value: next });
     storage?.events?.emit("field.value.changed", {
       id: nodeId,
@@ -89,7 +100,7 @@ export function FieldView({ node, editor, updateAttributes }: NodeViewProps) {
         <span className={styles.host} contentEditable={false}>
           {renderHost({
             def,
-            value,
+            value: displayValue,
             readOnly,
             onChange: commitValue,
           })}
@@ -101,10 +112,10 @@ export function FieldView({ node, editor, updateAttributes }: NodeViewProps) {
           title={def.instruction ?? def.label}
         >
           <span className={styles.label}>{def.label}</span>
-          {value === null || value === undefined || value === "" ? (
+          {displayValue === null || displayValue === undefined || displayValue === "" ? (
             <span className={`${styles.value} ${styles.empty}`}>—</span>
           ) : (
-            <span className={styles.value}>{String(value)}</span>
+            <span className={styles.value}>{String(displayValue)}</span>
           )}
         </span>
       ) : (
