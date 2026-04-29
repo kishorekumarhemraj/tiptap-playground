@@ -2,8 +2,7 @@
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-// @ts-expect-error — installed from TipTap Pro registry; run `pnpm install` with TIPTAP_PRO_TOKEN set
-import { PageKit } from "@tiptap-pro/extension-pages-pagekit";
+import { PageKit } from "@tiptap-playground/editor";
 import { useState, useRef, useCallback } from "react";
 import type { JSONContent } from "@tiptap/core";
 import styles from "./PagesShell.module.css";
@@ -14,7 +13,7 @@ type PageFormatName = (typeof PAGE_FORMATS)[number];
 const CONTENT_KEY = "tiptap-pages-demo:v1";
 
 const DEFAULT_CONTENT = `<h1>Quarterly Report</h1>
-<p>This document is rendered with the TipTap Pages extension — content flows naturally across A4 pages with proper margins, headers, and footers.</p>
+<p>This document is rendered with our open-source Pages extension — content flows naturally across A4 pages with proper margins, headers, and footers.</p>
 <h2>Executive Summary</h2>
 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
 <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
@@ -31,7 +30,14 @@ const DEFAULT_CONTENT = `<h1>Quarterly Report</h1>
 <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt.</p>
 <h2>Recommendations</h2>
 <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.</p>
-<p>Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est.</p>`;
+<p>Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est.</p>
+<p>Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae.</p>
+<h2>Financial Outlook</h2>
+<p>Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</p>
+<p>Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur.</p>
+<h2>Conclusion</h2>
+<p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati.</p>
+<p>Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus.</p>`;
 
 function loadContent(): JSONContent | string {
   if (typeof window === "undefined") return DEFAULT_CONTENT;
@@ -47,7 +53,6 @@ const ZOOM_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 export function PagesShell() {
   const [pageFormat, setPageFormatState] = useState<PageFormatName>("A4");
   const [zoom, setZoomState] = useState(1);
-  const [pageBreakLabel] = useState("Page break");
 
   const initialContentRef = useRef(loadContent());
 
@@ -64,13 +69,9 @@ export function PagesShell() {
           footer: "Page {page} of {total}",
           pageGapBackground: "#f1f1ef",
           zoom: 1,
+          margin: { top: 60, right: 80, bottom: 60, left: 80 },
         },
-        table: {
-          resizable: true,
-        },
-        pagebreak: {
-          label: pageBreakLabel,
-        },
+        pagebreak: { label: "Page break" },
       }),
     ],
     content: initialContentRef.current,

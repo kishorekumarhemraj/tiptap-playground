@@ -11,8 +11,7 @@
   },
   "dependencies": {
     "@tiptap-playground/editor": "workspace:*",
-    "@tiptap-pro/extension-pages-pagekit": "^1.0.0-alpha.16.2",
-    "@tiptap/core": "^3.22.4",
+"@tiptap/core": "^3.22.4",
     "@tiptap/extension-collaboration": "^3.22.4",
     "@tiptap/extension-collaboration-caret": "^3.22.4",
     "@tiptap/extension-drag-handle": "^3.22.4",

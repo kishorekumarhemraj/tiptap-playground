@@ -8,7 +8,7 @@
 .hero {
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  padding: 36px 48px 32px;
+  padding: 12px 24px 12px;
 }
 
 .heroInner {
@@ -28,7 +28,6 @@
   background: var(--accent-soft);
   border-radius: var(--radius-full);
   padding: 3px 10px;
-  margin-bottom: 14px;
 }
 
 .title {
@@ -42,7 +41,6 @@
 .subtitle {
   font-size: 14px;
   color: var(--fg-muted);
-  max-width: 68ch;
   line-height: 1.65;
   margin: 0;
 }
@@ -72,7 +70,7 @@
 /* ── Main body ── */
 .body {
   flex: 1;
-  padding: 28px 48px 48px;
+  padding: 12px 12px 12px;
   max-width: calc(1040px + 96px);
   width: 100%;
   margin: 0 auto;

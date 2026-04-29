@@ -12,13 +12,13 @@ export default function PagesPage() {
     <div className={styles.main}>
       <header className={styles.hero}>
         <div className={styles.heroInner}>
-          <div className={styles.badge}>@tiptap-pro/extension-pages-pagekit</div>
+          <div className={styles.badge}>@tiptap-playground/editor · PageKit</div>
           <h1 className={styles.title}>Pages Demo</h1>
           <p className={styles.subtitle}>
-            Paginated document layout powered by{" "}
-            <code>PageKit</code> — A4/Letter pages with proper margins,
-            headers, footers, page breaks, and zoom. Double-click the header
-            or footer area to edit them.
+            Paginated document layout powered by our open-source{" "}
+            <code>PageKit</code> extension — A4/Letter/Legal pages with
+            configurable margins, headers, footers, zoom, and explicit page
+            breaks. No commercial license required.
           </p>
         </div>
       </header>
@@ -30,15 +30,8 @@ export default function PagesPage() {
       </div>
 
       <footer className={styles.footer}>
-        Requires{" "}
-        <code>TIPTAP_PRO_TOKEN</code> · Team plan ·{" "}
-        <a
-          href="https://tiptap.dev/docs/pages/getting-started/overview"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          TipTap Pages docs
-        </a>
+        Open-source · MIT License · Extension in{" "}
+        <code>packages/editor/src/extensions/pages</code>
       </footer>
     </div>
   );

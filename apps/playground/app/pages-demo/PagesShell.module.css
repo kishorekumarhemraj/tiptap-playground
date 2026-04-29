@@ -157,16 +157,16 @@
   flex: 1;
   overflow: auto;
   background: var(--bg-subtle, #f1f1ef);
-  padding: 32px 24px 48px;
+  padding: 32px 0 64px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
 }
 
 /*
- * The TipTap Pages extension injects its own layout styles into the
- * ProseMirror element. We avoid fighting it — only set a base font
- * and colour so the page surfaces look consistent with the rest of
- * the playground.
+ * Our Pages extension adds .tpe-pages-editor to the ProseMirror element
+ * and handles width/padding/shadow via CSS custom properties. We only
+ * add base typography here — nothing that conflicts with the page layout.
  */
 .editorContent :global(.ProseMirror) {
   outline: none;
