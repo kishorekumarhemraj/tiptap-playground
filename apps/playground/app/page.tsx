@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { EditorShell } from "./editor/EditorShell";
 import styles from "./page.module.css";
 
@@ -16,6 +17,9 @@ export default function Page() {
             flows through host-supplied drivers and a{" "}
             <code>PermissionPolicy</code>.
           </p>
+          <Link href="/pages-demo" className={styles.demoLink}>
+            Also see: Pages Demo →
+          </Link>
         </div>
       </header>
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TipTap Playground",
+  title: "Block Editor Playground",
   description:
     "Demo host for @tiptap-playground/editor - driver-injected editor for regulated document management.",
 };
