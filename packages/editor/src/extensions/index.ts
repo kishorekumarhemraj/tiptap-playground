@@ -10,6 +10,7 @@ import { collaborationModule } from "./collaboration";
 import { trackChangesModule } from "./track-changes";
 import { versioningModule } from "./versioning";
 import { diffViewModule } from "./diff-view";
+import { wordExportModule } from "./word-export";
 
 /**
  * The canonical module list. Order matters - modules registered earlier
@@ -33,6 +34,7 @@ export const defaultExtensionModules: EditorExtensionModule[] = [
   trackChangesModule,
   versioningModule,
   diffViewModule,
+  wordExportModule,
 ];
 
 export {
@@ -47,9 +49,13 @@ export {
   trackChangesModule,
   versioningModule,
   diffViewModule,
+  wordExportModule,
 };
 
 export {
   TemplateStructureGuard,
   TEMPLATE_GUARD_BYPASS_META,
 } from "./template-guard";
+
+export { PageBreakNode, exportToWord } from "./word-export";
+export type { WordExportOptions } from "./word-export";
