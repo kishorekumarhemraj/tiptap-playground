@@ -88,6 +88,10 @@ export function EditorShell() {
     right: DiffPaneVersion;
   } | null>(null);
 
+  // Restore preview: show a DiffView of the target version vs current content
+  // with a Restore button before committing. Null = not showing.
+  const [restorePreview, setRestorePreview] = useState<VersionSnapshot | null>(null);
+
   // Persist the current document across context rebuilds AND page
   // reloads. On mount we read from localStorage; on every update we
   // write back. When the user toggles Template <-> Document we still
@@ -239,6 +243,7 @@ export function EditorShell() {
               right: snapshotToDiffPane(right),
             })
           }
+          onPreviewRestore={(snapshot) => setRestorePreview(snapshot)}
         />
       </div>
 
@@ -259,6 +264,53 @@ export function EditorShell() {
               right={diffPair.right}
               onClose={() => setDiffPair(null)}
             />
+          </div>
+        </div>
+      )}
+
+      {restorePreview && (
+        <div
+          className={styles.diffOverlay}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setRestorePreview(null);
+          }}
+        >
+          <div className={styles.diffOverlayInner}>
+            <div className={styles.restorePreviewWrapper}>
+              <DiffView
+                modules={defaultExtensionModules}
+                context={context}
+                left={snapshotToDiffPane(restorePreview)}
+                right={{
+                  id: "current",
+                  label: "Current document",
+                  at: Date.now(),
+                  json: typeof latestJsonRef.current === "string"
+                    ? { type: "doc", content: [] }
+                    : latestJsonRef.current,
+                }}
+                onClose={() => setRestorePreview(null)}
+              />
+              <div className={styles.restorePreviewActions}>
+                <button
+                  type="button"
+                  className={styles.restorePreviewCancel}
+                  onClick={() => setRestorePreview(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={styles.restorePreviewConfirm}
+                  onClick={() => {
+                    editor?.restoreVersion(restorePreview.id);
+                    setRestorePreview(null);
+                  }}
+                >
+                  Restore this version
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
