@@ -117,8 +117,23 @@ export const EditableField = Node.create<
 
       unsetEditableField:
         () =>
-        ({ commands }) =>
-          commands.lift(this.name),
+        ({ state, dispatch }) => {
+          const type = this.type;
+          const { $from } = state.selection;
+          for (let d = $from.depth; d >= 0; d--) {
+            if ($from.node(d).type === type) {
+              const node = $from.node(d);
+              const pos = $from.before(d);
+              if (dispatch) {
+                dispatch(
+                  state.tr.replaceWith(pos, pos + node.nodeSize, node.content),
+                );
+              }
+              return true;
+            }
+          }
+          return false;
+        },
 
       updateEditableField:
         (attrs) =>

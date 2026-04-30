@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   NodeViewContent,
   NodeViewWrapper,
@@ -22,7 +23,11 @@ function EditIcon() {
   );
 }
 
-export function EditableFieldView({ node, editor }: NodeViewProps) {
+export function EditableFieldView({
+  node,
+  editor,
+  updateAttributes,
+}: NodeViewProps) {
   const storage = (
     editor.storage as { editableField?: EditableFieldExtensionStorage }
   ).editableField;
@@ -33,6 +38,10 @@ export function EditableFieldView({ node, editor }: NodeViewProps) {
     (node.attrs.placeholder as string | null) ??
     (editorMode === "document" ? "Write your response…" : "Editable region");
 
+  const [draftInstruction, setDraftInstruction] = useState<string>(
+    instruction ?? "",
+  );
+
   return (
     <NodeViewWrapper
       as="div"
@@ -40,14 +49,40 @@ export function EditableFieldView({ node, editor }: NodeViewProps) {
       data-editable-field-id={(node.attrs.id as string | null) ?? undefined}
       data-placeholder={placeholder}
     >
-      <span className={styles.chip} contentEditable={false}>
-        <EditIcon />
-        Editable
-      </span>
-      {instruction && (
-        <span className={styles.instruction} contentEditable={false}>
-          {instruction}
-        </span>
+      {isTemplate ? (
+        <div className={styles.templateBar} contentEditable={false}>
+          <span className={styles.chipInline}>
+            <EditIcon />
+            Editable
+          </span>
+          <input
+            className={styles.instructionInput}
+            type="text"
+            value={draftInstruction}
+            placeholder="Add instruction for document authors…"
+            aria-label="Instruction for document authors"
+            onChange={(e) => setDraftInstruction(e.target.value)}
+            onBlur={(e) => {
+              const next = e.target.value.trim() || null;
+              const current = (node.attrs.instruction as string | null) ?? null;
+              if (next !== current) {
+                updateAttributes({ instruction: next });
+              }
+            }}
+          />
+        </div>
+      ) : (
+        <>
+          <span className={styles.chip} contentEditable={false}>
+            <EditIcon />
+            Editable
+          </span>
+          {instruction && (
+            <span className={styles.instruction} contentEditable={false}>
+              {instruction}
+            </span>
+          )}
+        </>
       )}
       <NodeViewContent
         className={styles.content}

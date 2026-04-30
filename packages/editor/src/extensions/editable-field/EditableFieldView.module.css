@@ -49,6 +49,49 @@
   opacity: 1;
 }
 
+/* ── Template bar (template mode only) ───────────────────────────── */
+.templateBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-bottom: 1px dashed var(--accent-soft-border, rgba(37, 99, 235, 0.35));
+  user-select: none;
+}
+
+.chipInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent, #2563eb);
+  flex-shrink: 0;
+}
+
+.chipInline svg {
+  width: 11px;
+  height: 11px;
+}
+
+.instructionInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--fg-muted, #6b6b68);
+  padding: 2px 0;
+  outline: none;
+  min-width: 0;
+}
+
+.instructionInput::placeholder {
+  color: var(--fg-faint, #a8a8a5);
+}
+
 /* ── Chip ─────────────────────────────────────────────────────────── */
 .chip {
   position: absolute;

@@ -43,6 +43,9 @@ export function SectionView({
   const sectionId = (node.attrs.id as string | null) ?? null;
 
   const [draftTitle, setDraftTitle] = useState<string>(title ?? "");
+  const [draftInstruction, setDraftInstruction] = useState<string>(
+    instruction ?? "",
+  );
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -76,9 +79,22 @@ export function SectionView({
                 }
               }}
             />
-            {instruction && (
-              <span className={styles.instruction}>{instruction}</span>
-            )}
+            <input
+              className={styles.instructionInput}
+              type="text"
+              value={draftInstruction}
+              placeholder="Add instruction for document authors…"
+              aria-label="Section instruction"
+              onChange={(e) => setDraftInstruction(e.target.value)}
+              onBlur={(e) => {
+                const next = e.target.value.trim() || null;
+                const current =
+                  (node.attrs.instruction as string | null) ?? null;
+                if (next !== current) {
+                  updateAttributes({ instruction: next });
+                }
+              }}
+            />
           </div>
           <div className={styles.badges}>
             <button
