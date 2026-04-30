@@ -7,28 +7,21 @@
 
 .editorContent {
   flex: 1;
-  padding: 32px 24px 48px;
-  max-height: 78vh;
   overflow: auto;
-  display: flex;
-  justify-content: center;
   background: var(--bg-subtle, #f1f1ef);
+  padding: 32px 0 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /*
- * A4 page simulation.
- *
- * A4 is 210mm × 297mm. We render the ProseMirror surface at that
- * width and use a repeating vertical gradient to draw a visible
- * gap + thin rule every 297mm so long documents look like a stack
- * of pages, the way Microsoft Word does.
+ * The Pages extension manages width, padding, and page separators via
+ * CSS custom properties on the .tpe-pages-editor class. Here we only
+ * set visual and typographic properties that the extension doesn't own.
  */
 .proseMirror {
   outline: none;
-  width: 210mm;
-  max-width: 100%;
-  min-height: 297mm;
-  padding: 2.54cm;
   box-sizing: border-box;
   background: #ffffff;
   color: #1a1a1a;
@@ -37,15 +30,6 @@
     0 4px 16px rgba(0, 0, 0, 0.08);
   font-size: 15px;
   line-height: 1.15;
-  background-image:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent calc(297mm - 1px),
-      rgba(0, 0, 0, 0.08) calc(297mm - 1px),
-      rgba(0, 0, 0, 0.08) 297mm
-    );
-  background-attachment: local;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -55,24 +39,12 @@
     box-shadow:
       0 1px 2px rgba(0, 0, 0, 0.4),
       0 4px 20px rgba(0, 0, 0, 0.5);
-    background-image:
-      repeating-linear-gradient(
-        to bottom,
-        transparent 0,
-        transparent calc(297mm - 1px),
-        rgba(255, 255, 255, 0.08) calc(297mm - 1px),
-        rgba(255, 255, 255, 0.08) 297mm
-      );
   }
 }
 
 @media (max-width: 820px) {
   .editorContent {
-    padding: 16px 8px 32px;
-  }
-
-  .proseMirror {
-    padding: 1.6cm 1.2cm;
+    padding: 16px 0 32px;
   }
 }
 

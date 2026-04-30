@@ -23,25 +23,10 @@ export const PageBreakNode = Node.create({
       "div",
       {
         "data-type": "page-break",
-        style:
-          "display:flex;align-items:center;gap:8px;margin:4px 0;color:#999;font-size:12px;user-select:none;pointer-events:none",
+        class: "tpe-page-break-node",
         contenteditable: "false",
       },
-      [
-        "span",
-        {
-          style:
-            "flex:1;border-top:1px dashed #ccc",
-        },
-      ],
       ["span", {}, "Page Break"],
-      [
-        "span",
-        {
-          style:
-            "flex:1;border-top:1px dashed #ccc",
-        },
-      ],
     ];
   },
 

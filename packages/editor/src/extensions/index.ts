@@ -11,6 +11,7 @@ import { trackChangesModule } from "./track-changes";
 import { versioningModule } from "./versioning";
 import { diffViewModule } from "./diff-view";
 import { wordExportModule } from "./word-export";
+import { pagesModule } from "./pages";
 
 /**
  * The canonical module list. Order matters - modules registered earlier
@@ -35,6 +36,7 @@ export const defaultExtensionModules: EditorExtensionModule[] = [
   versioningModule,
   diffViewModule,
   wordExportModule,
+  pagesModule,
 ];
 
 export {
@@ -50,6 +52,7 @@ export {
   versioningModule,
   diffViewModule,
   wordExportModule,
+  pagesModule,
 };
 
 export {
