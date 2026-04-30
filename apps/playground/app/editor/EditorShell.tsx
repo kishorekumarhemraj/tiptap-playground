@@ -18,6 +18,8 @@ import {
   type VersionsPanelHandle,
 } from "@tiptap-playground/editor/react";
 import { buildPlaygroundDrivers } from "./drivers";
+import { ModeBanner } from "./ModeBanner";
+import { PermissionToast } from "./PermissionToast";
 import styles from "./EditorShell.module.css";
 
 const DOCUMENT_ID = "playground-doc";
@@ -159,6 +161,7 @@ export function EditorShell() {
 
   return (
     <div className={styles.shell}>
+      <ModeBanner mode={mode} />
       <div className={styles.controls}>
         <div className={styles.controlsLeft}>
           <div
@@ -238,6 +241,8 @@ export function EditorShell() {
           }
         />
       </div>
+
+      <PermissionToast events={eventsRef.current} />
 
       {diffPair && (
         <div

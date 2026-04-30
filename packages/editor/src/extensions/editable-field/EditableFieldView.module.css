@@ -23,11 +23,15 @@
   opacity: 1;
 }
 
-/* ── Document mode: reveal on hover or focus ─────────────────────── */
-.documentMode:hover,
-.documentMode:focus-within {
-  border-color: var(--accent-soft-border, rgba(37, 99, 235, 0.35));
-  background: var(--editable-bg, rgba(37, 99, 235, 0.04));
+/* ── Document mode: always-visible subtle boundary so authors know where to type */
+.documentMode {
+  border-color: var(--accent-soft-border, rgba(37, 99, 235, 0.3));
+  background: var(--editable-bg, rgba(37, 99, 235, 0.03));
+}
+
+.documentMode:hover {
+  border-color: var(--accent-soft-border, rgba(37, 99, 235, 0.5));
+  background: var(--editable-bg, rgba(37, 99, 235, 0.05));
 }
 
 .documentMode:focus-within {
@@ -36,7 +40,7 @@
 }
 
 .documentMode .chip {
-  opacity: 0;
+  opacity: 0.6;
   transition: opacity 150ms ease;
 }
 
