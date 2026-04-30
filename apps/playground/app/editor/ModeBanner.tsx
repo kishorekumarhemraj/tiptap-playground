@@ -18,7 +18,7 @@ export function ModeBanner({ mode }: ModeBannerProps) {
         <>
           <span className={styles.icon} aria-hidden="true">✏️</span>
           <span>
-            <strong>Template Design Mode</strong> — You're designing a reusable
+            <strong>Template Design Mode</strong> — You&apos;re designing a reusable
             template. Add sections, editable regions, and form fields. Authors
             will fill in the editable regions but cannot change the structure.
           </span>
