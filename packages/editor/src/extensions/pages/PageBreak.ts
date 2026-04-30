@@ -1,12 +1,5 @@
 import { Node, mergeAttributes } from "@tiptap/core";
-
-declare module "@tiptap/core" {
-  interface Commands<ReturnType> {
-    pageBreak: {
-      setPageBreak: () => ReturnType;
-    };
-  }
-}
+import type { CommandProps } from "@tiptap/core";
 
 /**
  * Block-level atom node that forces a hard page break at the current
@@ -44,7 +37,7 @@ export const PageBreak = Node.create<{ label: string }>({
     return {
       setPageBreak:
         () =>
-        ({ chain }) =>
+        ({ chain }: CommandProps) =>
           chain().insertContent({ type: this.name }).run(),
     };
   },

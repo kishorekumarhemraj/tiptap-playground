@@ -4,6 +4,7 @@ declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     pageBreak: {
       insertPageBreak: () => ReturnType;
+      setPageBreak: () => ReturnType;
     };
   }
 }

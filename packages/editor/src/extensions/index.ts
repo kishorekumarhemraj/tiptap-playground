@@ -62,6 +62,3 @@ export type { WordExportOptions } from "./word-export";
 
 export { PageBreak, Pages, PageKit } from "./pages";
 export type { PageFormat, PagesOptions, PagesMargin, PagesStorage, PageKitOptions } from "./pages";
-
-export { PageBreakNode, exportToWord } from "./word-export";
-export type { WordExportOptions } from "./word-export";
