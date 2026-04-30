@@ -21,6 +21,12 @@ export interface VersionsPanelProps {
    * their own confirmation UI so the confirmation itself is auditable.
    */
   onBeforeRestore?: (snapshot: VersionSnapshot) => boolean | Promise<boolean>;
+  /**
+   * Called when the user clicks "Preview" on a version. The host should
+   * show a DiffView comparing the snapshot against the current document
+   * and offer a Restore button. If not provided, the Preview button is hidden.
+   */
+  onPreviewRestore?: (snapshot: VersionSnapshot) => void;
   className?: string;
 }
 
@@ -30,6 +36,7 @@ export function VersionsPanel({
   onChangeDiffSelection,
   onCompare,
   onBeforeRestore,
+  onPreviewRestore,
   className,
 }: VersionsPanelProps) {
   const [snapshots, setSnapshots] = useState<VersionSnapshot[]>([]);
@@ -127,6 +134,16 @@ export function VersionsPanel({
                   {new Date(s.at).toLocaleString()} · {s.by.name}
                 </div>
                 <div className={styles.itemActions}>
+                  {onPreviewRestore && (
+                    <button
+                      type="button"
+                      className={styles.linkButton}
+                      onClick={() => onPreviewRestore(s)}
+                      title="Preview differences before restoring"
+                    >
+                      Preview
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={styles.linkButton}
