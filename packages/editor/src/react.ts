@@ -14,6 +14,8 @@ export type { TemplateDragHandleProps } from "./react/DragHandle";
 export { Toolbar } from "./react/Toolbar";
 export type { ToolbarProps } from "./react/Toolbar";
 
+export { PagesControls } from "./react/PagesControls";
+
 export { VersionsPanel } from "./react/VersionsPanel";
 export type { VersionsPanelProps } from "./react/VersionsPanel";
 

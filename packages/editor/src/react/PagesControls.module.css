@@ -1,0 +1,105 @@
+.pagesControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border, #e8e8e5);
+  background: var(--bg, #ffffff);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.controlLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.controlText {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-muted, #6b6b68);
+  white-space: nowrap;
+}
+
+.select,
+.zoomSelect {
+  appearance: none;
+  border: 1px solid var(--border, #e8e8e5);
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-subtle, #f1f1ef);
+  color: var(--fg, #1a1a1a);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 24px 3px 8px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b68' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  transition: border-color 0.1s;
+}
+
+.select:hover,
+.zoomSelect:hover {
+  border-color: var(--border-strong, #d0cec8);
+}
+
+.zoomGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zoomSelect {
+  width: 72px;
+}
+
+.zoomStep {
+  appearance: none;
+  border: 1px solid var(--border, #e8e8e5);
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-subtle, #f1f1ef);
+  color: var(--fg, #1a1a1a);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.zoomStep:hover:not(:disabled) {
+  background: var(--bg-muted, #f4f4f2);
+  border-color: var(--border-strong, #d0cec8);
+}
+
+.zoomStep:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageBreakButton {
+  appearance: none;
+  border: 1px solid var(--border, #e8e8e5);
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-subtle, #f1f1ef);
+  color: var(--fg, #1a1a1a);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.pageBreakButton:hover {
+  background: var(--bg-muted, #f4f4f2);
+  border-color: var(--border-strong, #d0cec8);
+}
