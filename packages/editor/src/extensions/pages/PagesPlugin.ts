@@ -53,6 +53,11 @@ function createSeparatorDOM(
   const { footer, header, headerHeight, footerHeight, pageGap, pageGapBackground } =
     opts;
 
+  // Shadow that falls downward into the gap — bottom edge of page N.
+  const bottomEdge = document.createElement("div");
+  bottomEdge.className = "tpe-page-edge tpe-page-edge--bottom";
+  wrap.appendChild(bottomEdge);
+
   if (footer && footerHeight > 0) {
     const footerEl = document.createElement("div");
     footerEl.className = "tpe-page-footer-area";
@@ -78,10 +83,31 @@ function createSeparatorDOM(
     wrap.appendChild(headerEl);
   }
 
+  // Shadow that falls upward into the gap — top edge of page N+1.
+  const topEdge = document.createElement("div");
+  topEdge.className = "tpe-page-edge tpe-page-edge--top";
+  wrap.appendChild(topEdge);
+
   return wrap;
 }
 
 // ─── Measurement ──────────────────────────────────────────────────────────────
+
+/**
+ * Return the block's own height plus any immediately-preceding widget
+ * decorations (e.g. block-instruction hint rows). Those widgets are not
+ * ProseMirror nodes so they don't appear in doc.childCount, but they do
+ * take up vertical space and must be counted to keep overflow math accurate.
+ */
+function blockHeightWithWidgets(dom: HTMLElement): number {
+  let h = dom.offsetHeight;
+  let prev = dom.previousElementSibling as HTMLElement | null;
+  while (prev && prev.classList.contains("ProseMirror-widget")) {
+    h += prev.offsetHeight;
+    prev = prev.previousElementSibling as HTMLElement | null;
+  }
+  return h;
+}
 
 /**
  * Walk every top-level block in the document, accumulate their rendered
@@ -90,7 +116,8 @@ function createSeparatorDOM(
  *
  * We use `offsetHeight` on each block DOM element (not `offsetTop`) so
  * that previously-inserted separator widgets — which push blocks down —
- * do not corrupt our measurements.
+ * do not corrupt our measurements. Widget decorations preceding each block
+ * (e.g. instruction hints) are also included in the tally.
  */
 function computeDecorations(
   view: EditorView,
@@ -114,7 +141,7 @@ function computeDecorations(
     const dom = view.nodeDOM(pos);
     blocks.push({
       pos,
-      height: dom instanceof HTMLElement ? dom.offsetHeight : 0,
+      height: dom instanceof HTMLElement ? blockHeightWithWidgets(dom) : 0,
       isHardBreak: node.type.name === "pageBreak",
     });
     pos += node.nodeSize;

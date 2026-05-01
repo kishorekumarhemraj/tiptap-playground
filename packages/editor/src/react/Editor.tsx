@@ -15,6 +15,7 @@ import type {
   EditorExtensionModule,
 } from "../core/types";
 import { Toolbar } from "./Toolbar";
+import { PagesControls } from "./PagesControls";
 import { TemplateDragHandle } from "./DragHandle";
 import {
   toEditorHandle,
@@ -115,9 +116,14 @@ export function Editor({
   // crash caused by the library moving its element outside the React tree.
   const showDragHandle = context.mode === "template" && !context.readOnly;
 
+  const hasPagesExtension = !!editor?.extensionManager.extensions.find(
+    (e) => e.name === "pages",
+  );
+
   return (
     <div className={`${styles.root} ${className ?? ""}`.trim()}>
       {!hideToolbar && <Toolbar editor={editor} items={toolbarItems} />}
+      {hasPagesExtension && <PagesControls editor={editor} />}
       <EditorContent editor={editor} className={styles.editorContent} />
       <TemplateDragHandle editor={editor} active={showDragHandle} />
     </div>

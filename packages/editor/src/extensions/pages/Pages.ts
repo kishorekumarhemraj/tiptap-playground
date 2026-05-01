@@ -45,9 +45,9 @@ let styleRefCount = 0;
 const STYLE_RULES = `
 .tpe-pages-editor {
   background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,.18), 0 1px 8px rgba(0,0,0,.08);
   outline: none;
   box-sizing: border-box;
+  position: relative;
   /* width/padding/margin set via CSS vars updated by the extension */
   width: var(--tpe-page-width);
   padding-top: var(--tpe-margin-top);
@@ -64,12 +64,53 @@ const STYLE_RULES = `
   outline: none;
 }
 
+/* Shadow for the top edge of the first page — casts upward into the gray gap */
+.tpe-pages-editor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  box-shadow: 0 -4px 12px rgba(0,0,0,.22), 0 -1px 3px rgba(0,0,0,.12);
+}
+
+/* Shadow for the bottom edge of the last page — casts downward into the gray gap */
+.tpe-pages-editor::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,.22), 0 1px 3px rgba(0,0,0,.12);
+}
+
 .tpe-page-separator {
   /* pulled out of the flow — spans the full content width */
   margin-left: calc(-1 * var(--tpe-margin-left));
   margin-right: calc(-1 * var(--tpe-margin-right));
   user-select: none;
   pointer-events: none;
+}
+
+/* Zero-height divs whose box-shadows cast into the gray gap, giving each
+   page its own distinct bottom/top edge — like separate sheets of paper. */
+.tpe-page-edge {
+  height: 0;
+  overflow: visible;
+}
+
+.tpe-page-edge--bottom {
+  box-shadow: 0 6px 14px rgba(0,0,0,.22), 0 2px 4px rgba(0,0,0,.14);
+}
+
+.tpe-page-edge--top {
+  box-shadow: 0 -6px 14px rgba(0,0,0,.22), 0 -2px 4px rgba(0,0,0,.14);
 }
 
 .tpe-page-footer-area,
