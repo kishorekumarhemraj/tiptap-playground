@@ -45,7 +45,11 @@ let styleRefCount = 0;
 const STYLE_RULES = `
 .tpe-pages-editor {
   background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,.18), 0 1px 8px rgba(0,0,0,.08);
+  /* Outer shadow frames the whole document (sides + first/last page edges).
+     Inter-page edges are rendered by tpe-page-edge inside each separator. */
+  box-shadow:
+    0 1px 4px rgba(0,0,0,.14),
+    0 4px 16px rgba(0,0,0,.08);
   outline: none;
   box-sizing: border-box;
   /* width/padding/margin set via CSS vars updated by the extension */
@@ -70,6 +74,21 @@ const STYLE_RULES = `
   margin-right: calc(-1 * var(--tpe-margin-right));
   user-select: none;
   pointer-events: none;
+}
+
+/* Zero-height divs whose box-shadows cast into the gray gap, giving each
+   page its own distinct bottom/top edge — like separate sheets of paper. */
+.tpe-page-edge {
+  height: 0;
+  overflow: visible;
+}
+
+.tpe-page-edge--bottom {
+  box-shadow: 0 4px 12px rgba(0,0,0,.20), 0 1px 4px rgba(0,0,0,.12);
+}
+
+.tpe-page-edge--top {
+  box-shadow: 0 -4px 12px rgba(0,0,0,.20), 0 -1px 4px rgba(0,0,0,.12);
 }
 
 .tpe-page-footer-area,

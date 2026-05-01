@@ -53,6 +53,11 @@ function createSeparatorDOM(
   const { footer, header, headerHeight, footerHeight, pageGap, pageGapBackground } =
     opts;
 
+  // Shadow that falls downward into the gap — bottom edge of page N.
+  const bottomEdge = document.createElement("div");
+  bottomEdge.className = "tpe-page-edge tpe-page-edge--bottom";
+  wrap.appendChild(bottomEdge);
+
   if (footer && footerHeight > 0) {
     const footerEl = document.createElement("div");
     footerEl.className = "tpe-page-footer-area";
@@ -77,6 +82,11 @@ function createSeparatorDOM(
       .replace(/\{total\}/g, String(totalPages));
     wrap.appendChild(headerEl);
   }
+
+  // Shadow that falls upward into the gap — top edge of page N+1.
+  const topEdge = document.createElement("div");
+  topEdge.className = "tpe-page-edge tpe-page-edge--top";
+  wrap.appendChild(topEdge);
 
   return wrap;
 }
