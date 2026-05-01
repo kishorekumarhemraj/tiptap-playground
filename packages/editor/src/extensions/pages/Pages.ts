@@ -45,13 +45,9 @@ let styleRefCount = 0;
 const STYLE_RULES = `
 .tpe-pages-editor {
   background: white;
-  /* Outer shadow frames the whole document (sides + first/last page edges).
-     Inter-page edges are rendered by tpe-page-edge inside each separator. */
-  box-shadow:
-    0 1px 4px rgba(0,0,0,.14),
-    0 4px 16px rgba(0,0,0,.08);
   outline: none;
   box-sizing: border-box;
+  position: relative;
   /* width/padding/margin set via CSS vars updated by the extension */
   width: var(--tpe-page-width);
   padding-top: var(--tpe-margin-top);
@@ -66,6 +62,32 @@ const STYLE_RULES = `
 
 .tpe-pages-editor:focus {
   outline: none;
+}
+
+/* Shadow for the top edge of the first page — casts upward into the gray gap */
+.tpe-pages-editor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  box-shadow: 0 -4px 12px rgba(0,0,0,.22), 0 -1px 3px rgba(0,0,0,.12);
+}
+
+/* Shadow for the bottom edge of the last page — casts downward into the gray gap */
+.tpe-pages-editor::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,.22), 0 1px 3px rgba(0,0,0,.12);
 }
 
 .tpe-page-separator {
@@ -84,11 +106,11 @@ const STYLE_RULES = `
 }
 
 .tpe-page-edge--bottom {
-  box-shadow: 0 4px 12px rgba(0,0,0,.20), 0 1px 4px rgba(0,0,0,.12);
+  box-shadow: 0 6px 14px rgba(0,0,0,.22), 0 2px 4px rgba(0,0,0,.14);
 }
 
 .tpe-page-edge--top {
-  box-shadow: 0 -4px 12px rgba(0,0,0,.20), 0 -1px 4px rgba(0,0,0,.12);
+  box-shadow: 0 -6px 14px rgba(0,0,0,.22), 0 -2px 4px rgba(0,0,0,.14);
 }
 
 .tpe-page-footer-area,
