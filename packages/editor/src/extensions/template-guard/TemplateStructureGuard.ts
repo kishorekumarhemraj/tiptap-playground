@@ -178,15 +178,43 @@ export const TemplateStructureGuard =
                 }
 
                 // 3. Route through the host policy so it can override.
+                //
+                // Walk up to the *editable container* (the editableField
+                // or mutableContent section that `evaluateEditability`
+                // found) rather than the innermost block node (paragraph,
+                // heading, etc.). Using the paragraph as the container
+                // causes `canModifyStructure` to hit its `default` branch
+                // and deny perfectly valid content edits inside an
+                // editable region.
                 const $pos = doc.resolve(
                   Math.max(0, Math.min(oldStart, doc.content.size)),
                 );
-                const container =
-                  $pos.depth > 0
+                let editableAncestor: import("@tiptap/pm/model").Node | null =
+                  null;
+                for (let d = $pos.depth; d > 0; d--) {
+                  const n = $pos.node(d);
+                  if (
+                    n.type.name === "editableField" ||
+                    (n.type.name === "section" &&
+                      n.attrs.mutableContent === true)
+                  ) {
+                    editableAncestor = n;
+                    break;
+                  }
+                }
+                const container = editableAncestor
+                  ? blockDescriptorOf(editableAncestor)
+                  : $pos.depth > 0
                     ? blockDescriptorOf($pos.node($pos.depth))
                     : { type: "doc", id: null, attrs: {} };
 
-                if (oldStart === oldEnd && startVerdict.via === "editableField") {
+                // All operations inside an editableField — whether
+                // insertions (oldStart === oldEnd), deletions, or
+                // replacements (oldStart < oldEnd) — are content fills,
+                // not structural mutations. Route them to canFillField so
+                // the policy gate is correct and the default policy does
+                // not block them.
+                if (startVerdict.via === "editableField") {
                   const decision = policy.canFillField({
                     ...ctx,
                     field: container,
