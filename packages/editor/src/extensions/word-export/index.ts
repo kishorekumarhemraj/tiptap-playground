@@ -2,6 +2,7 @@ import type { EditorExtensionModule } from "../../core/types";
 import type { WordExportOptions } from "./serializer";
 import { PageBreakNode } from "./PageBreak";
 import { exportToWord } from "./serializer";
+import { IconExportWord, IconPageBreak } from "../../react/icons";
 
 /**
  * Word export module. Adds:
@@ -28,12 +29,21 @@ export const wordExportModule: EditorExtensionModule = {
     };
 
     return [
-      { kind: "divider", id: "word-export-divider" },
+      { kind: "divider", id: "export-divider" },
+      {
+        kind: "button",
+        id: "word-insert-page-break",
+        label: "Page break",
+        title: "Insert page break",
+        icon: IconPageBreak(),
+        onRun: (editor) => editor.chain().focus().insertPageBreak().run(),
+      },
       {
         kind: "button",
         id: "word-export",
-        label: "↓ Word",
+        label: "Export Word",
         title: "Export to Word (.docx)",
+        icon: IconExportWord(),
         onRun: (editor) => {
           const json = editor.getJSON();
           exportToWord(json, {
@@ -44,13 +54,6 @@ export const wordExportModule: EditorExtensionModule = {
             console.error("[word-export] export failed", err);
           });
         },
-      },
-      {
-        kind: "button",
-        id: "word-insert-page-break",
-        label: "⎵ Page Break",
-        title: "Insert page break",
-        onRun: (editor) => editor.chain().focus().insertPageBreak().run(),
       },
     ];
   },

@@ -1,74 +1,205 @@
+/* ─── Toolbar shell ──────────────────────────────────────────────────────── */
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 2px;
-  padding: 6px 12px;
+  gap: 1px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--border, #e8e8e5);
   background: var(--bg, #ffffff);
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 10;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-height: 40px;
 }
 
+.toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Icon button ────────────────────────────────────────────────────────── */
 .button {
+  /* Reset */
   appearance: none;
-  border: 1px solid transparent;
+  border: none;
   background: transparent;
-  color: var(--fg-muted, #6b6b68);
-  padding: 4px 8px;
-  border-radius: var(--radius-md, 6px);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  min-height: 28px;
-  min-width: 28px;
+  padding: 0;
+  margin: 0;
+
+  /* Layout */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md, 6px);
+  flex-shrink: 0;
+
+  /* Typography & colour */
+  color: var(--fg-muted, #6b6b68);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+
+  /* Interaction */
+  cursor: pointer;
   transition:
     background var(--transition-fast, 100ms ease),
     color var(--transition-fast, 100ms ease);
+
+  /* Tooltip anchor */
+  position: relative;
 }
 
 .button:hover:not(:disabled) {
-  background: var(--bg-muted, #f8f8f6);
+  background: var(--bg-muted, #f4f4f2);
   color: var(--fg, #1a1a1a);
 }
 
 .button.active {
-  background: var(--accent-soft, rgba(37, 99, 235, 0.1));
+  background: var(--accent-soft, rgba(37, 99, 235, 0.10));
   color: var(--accent, #2563eb);
+}
+
+.button.active:hover {
+  background: var(--accent-soft-hover, rgba(37, 99, 235, 0.16));
 }
 
 .button:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Text label inside a button (used when no SVG icon is provided) */
+.textLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* ─── Tooltip ────────────────────────────────────────────────────────────── */
+/*
+ * Pure CSS tooltip triggered on hover. The tooltip text comes from the
+ * `data-tooltip` attribute so no JS is required.
+ *
+ * Anatomy:
+ *   ::before  — the text bubble
+ *   ::after   — the arrow pointing down to the button
+ */
+.button[data-tooltip]::before,
+.button[data-tooltip]::after {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+  transform-origin: bottom center;
+  transform: translateX(-50%) scale(0.92);
+  white-space: nowrap;
+  z-index: 100;
+}
+
+.button[data-tooltip]::before {
+  content: attr(data-tooltip);
+  background: var(--fg, #1a1a1a);
+  color: var(--bg, #ffffff);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-sans, sans-serif);
+  line-height: 1.3;
+  padding: 4px 8px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  letter-spacing: 0.01em;
+}
+
+.button[data-tooltip]::after {
+  content: "";
+  bottom: calc(100% + 2px);
+  border: 4px solid transparent;
+  border-top-color: var(--fg, #1a1a1a);
+  border-bottom: none;
+}
+
+.button[data-tooltip]:hover::before,
+.button[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* Don't show tooltip when button is disabled */
+.button:disabled[data-tooltip]::before,
+.button:disabled[data-tooltip]::after {
+  display: none;
+}
+
+/* ─── Divider ────────────────────────────────────────────────────────────── */
+.divider {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: var(--border, #e8e8e5);
+  margin: 0 4px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* ─── Dropdown ───────────────────────────────────────────────────────────── */
+.dropdownWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .dropdown {
+  /* Reset native appearance */
+  appearance: none;
+  -webkit-appearance: none;
+
+  /* Sizing */
   height: 28px;
+  padding: 0 24px 0 8px;
+
+  /* Style */
   border: 1px solid var(--border, #e8e8e5);
   background: var(--bg, #ffffff);
   color: var(--fg, #1a1a1a);
   border-radius: var(--radius-md, 6px);
   font: inherit;
   font-size: 12px;
-  padding: 0 8px;
+  font-weight: 500;
   cursor: pointer;
-  transition: border-color var(--transition-fast, 100ms ease);
+  transition:
+    border-color var(--transition-fast, 100ms ease),
+    background var(--transition-fast, 100ms ease);
+  outline: none;
 }
 
 .dropdown:hover {
   border-color: var(--border-strong, #d0cec8);
+  background: var(--bg-muted, #f4f4f2);
 }
 
-.divider {
-  display: inline-block;
-  width: 1px;
-  height: 18px;
-  background: var(--border, #e8e8e5);
-  margin: 0 4px;
-  flex-shrink: 0;
+.dropdown:focus-visible {
+  border-color: var(--accent, #2563eb);
+  box-shadow: 0 0 0 2px var(--accent-soft, rgba(37, 99, 235, 0.2));
+}
+
+.dropdownChevron {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-muted, #6b6b68);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
 }

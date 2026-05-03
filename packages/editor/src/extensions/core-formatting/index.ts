@@ -7,6 +7,24 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
+import {
+  IconBold,
+  IconItalic,
+  IconUnderline,
+  IconStrikethrough,
+  IconCode,
+  IconCodeBlock,
+  IconH1,
+  IconH2,
+  IconH3,
+  IconBulletList,
+  IconOrderedList,
+  IconTaskList,
+  IconBlockquote,
+  IconHorizontalRule,
+  IconUndo,
+  IconRedo,
+} from "../../react/icons";
 import type { EditorExtensionModule } from "../../core/types";
 
 /**
@@ -49,51 +67,93 @@ export const coreFormattingModule: EditorExtensionModule = {
       },
     }),
   ],
-  toolbar: () => [
+  toolbar: (ctx) => [
+    // ── History ──────────────────────────────────────────────────────────
+    // Only show undo/redo when not in collab mode (Yjs manages its own stack)
+    ...(ctx.drivers.collaboration
+      ? []
+      : [
+          {
+            kind: "button" as const,
+            id: "undo",
+            label: "Undo",
+            title: "Undo (⌘Z)",
+            icon: IconUndo(),
+            isDisabled: (editor: import("@tiptap/react").Editor) =>
+              !editor.can().undo(),
+            onRun: (editor: import("@tiptap/react").Editor) =>
+              editor.chain().focus().undo().run(),
+          },
+          {
+            kind: "button" as const,
+            id: "redo",
+            label: "Redo",
+            title: "Redo (⌘⇧Z)",
+            icon: IconRedo(),
+            isDisabled: (editor: import("@tiptap/react").Editor) =>
+              !editor.can().redo(),
+            onRun: (editor: import("@tiptap/react").Editor) =>
+              editor.chain().focus().redo().run(),
+          },
+          { kind: "divider" as const, id: "history-divider" },
+        ]),
+
+    // ── Text style ────────────────────────────────────────────────────────
     {
       kind: "button",
       id: "bold",
-      label: "B",
+      label: "Bold",
       title: "Bold (⌘B)",
+      icon: IconBold(),
       isActive: (editor) => editor.isActive("bold"),
       onRun: (editor) => editor.chain().focus().toggleBold().run(),
     },
     {
       kind: "button",
       id: "italic",
-      label: "I",
+      label: "Italic",
       title: "Italic (⌘I)",
+      icon: IconItalic(),
       isActive: (editor) => editor.isActive("italic"),
       onRun: (editor) => editor.chain().focus().toggleItalic().run(),
     },
     {
       kind: "button",
       id: "underline",
-      label: "U",
+      label: "Underline",
       title: "Underline (⌘U)",
+      icon: IconUnderline(),
       isActive: (editor) => editor.isActive("underline"),
       onRun: (editor) => editor.chain().focus().toggleUnderline().run(),
     },
     {
       kind: "button",
       id: "strike",
-      label: "S",
+      label: "Strikethrough",
       title: "Strikethrough",
+      icon: IconStrikethrough(),
       isActive: (editor) => editor.isActive("strike"),
       onRun: (editor) => editor.chain().focus().toggleStrike().run(),
     },
     {
       kind: "button",
       id: "code",
-      label: "</>",
-      title: "Inline code",
+      label: "Inline code",
+      title: "Inline code (⌘E)",
+      icon: IconCode(),
       isActive: (editor) => editor.isActive("code"),
       onRun: (editor) => editor.chain().focus().toggleCode().run(),
     },
+
+    { kind: "divider", id: "text-style-divider" },
+
+    // ── Headings ──────────────────────────────────────────────────────────
     {
       kind: "button",
       id: "h1",
-      label: "H1",
+      label: "Heading 1",
+      title: "Heading 1 (⌘⌥1)",
+      icon: IconH1(),
       isActive: (editor) => editor.isActive("heading", { level: 1 }),
       onRun: (editor) =>
         editor.chain().focus().toggleHeading({ level: 1 }).run(),
@@ -101,7 +161,9 @@ export const coreFormattingModule: EditorExtensionModule = {
     {
       kind: "button",
       id: "h2",
-      label: "H2",
+      label: "Heading 2",
+      title: "Heading 2 (⌘⌥2)",
+      icon: IconH2(),
       isActive: (editor) => editor.isActive("heading", { level: 2 }),
       onRun: (editor) =>
         editor.chain().focus().toggleHeading({ level: 2 }).run(),
@@ -109,53 +171,68 @@ export const coreFormattingModule: EditorExtensionModule = {
     {
       kind: "button",
       id: "h3",
-      label: "H3",
+      label: "Heading 3",
+      title: "Heading 3 (⌘⌥3)",
+      icon: IconH3(),
       isActive: (editor) => editor.isActive("heading", { level: 3 }),
       onRun: (editor) =>
         editor.chain().focus().toggleHeading({ level: 3 }).run(),
     },
+
+    { kind: "divider", id: "heading-divider" },
+
+    // ── Lists & blocks ────────────────────────────────────────────────────
     {
       kind: "button",
       id: "bulletList",
-      label: "• List",
+      label: "Bullet list",
+      title: "Bullet list (⌘⇧8)",
+      icon: IconBulletList(),
       isActive: (editor) => editor.isActive("bulletList"),
       onRun: (editor) => editor.chain().focus().toggleBulletList().run(),
     },
     {
       kind: "button",
       id: "orderedList",
-      label: "1. List",
+      label: "Numbered list",
+      title: "Numbered list (⌘⇧7)",
+      icon: IconOrderedList(),
       isActive: (editor) => editor.isActive("orderedList"),
       onRun: (editor) => editor.chain().focus().toggleOrderedList().run(),
     },
     {
       kind: "button",
       id: "taskList",
-      label: "☑ Tasks",
+      label: "Task list",
+      title: "Task list",
+      icon: IconTaskList(),
       isActive: (editor) => editor.isActive("taskList"),
       onRun: (editor) => editor.chain().focus().toggleTaskList().run(),
     },
     {
       kind: "button",
       id: "blockquote",
-      label: "❝",
-      title: "Blockquote",
+      label: "Blockquote",
+      title: "Blockquote (⌘⇧B)",
+      icon: IconBlockquote(),
       isActive: (editor) => editor.isActive("blockquote"),
       onRun: (editor) => editor.chain().focus().toggleBlockquote().run(),
     },
     {
       kind: "button",
       id: "codeBlock",
-      label: "{ }",
-      title: "Code block",
+      label: "Code block",
+      title: "Code block (⌘⌥C)",
+      icon: IconCodeBlock(),
       isActive: (editor) => editor.isActive("codeBlock"),
       onRun: (editor) => editor.chain().focus().toggleCodeBlock().run(),
     },
     {
       kind: "button",
       id: "hr",
-      label: "—",
-      title: "Horizontal rule",
+      label: "Divider",
+      title: "Insert horizontal divider",
+      icon: IconHorizontalRule(),
       onRun: (editor) => editor.chain().focus().setHorizontalRule().run(),
     },
   ],
