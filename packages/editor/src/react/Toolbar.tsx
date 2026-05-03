@@ -197,7 +197,11 @@ export function Toolbar({ editor, items, className }: ToolbarProps) {
       el.removeEventListener("mouseout", onOut);
       hideTooltip();
     };
-  }, []);
+  // Re-run when editor becomes available: on first render editor is null so
+  // the loading-state div is returned (no toolbarRef element), causing the
+  // effect to find ref.current = null and exit early.  Adding `editor` here
+  // ensures we attach listeners once the real toolbar DOM is in place.
+  }, [editor]);
 
   if (!editor) {
     return (
