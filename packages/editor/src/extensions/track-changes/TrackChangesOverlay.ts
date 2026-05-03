@@ -65,13 +65,12 @@ del[data-track-change] {
 .tpe-tc-popover {
   position: fixed;
   z-index: 200;
-  min-width: 220px;
-  max-width: 320px;
+  width: 280px;
   padding: 0;
   background: var(--bg, #ffffff);
   border: 1px solid var(--border, #e8e8e5);
   border-radius: var(--radius-lg, 8px);
-  box-shadow: var(--shadow-lg, 0 10px 15px rgba(0,0,0,0.08));
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
   font-family: var(--font-sans, sans-serif);
   font-size: 13px;
   color: var(--fg, #1a1a1a);
@@ -81,19 +80,21 @@ del[data-track-change] {
 }
 .tpe-tc-popover[data-visible="false"] {
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateY(-4px) scale(0.98);
   pointer-events: none;
 }
 .tpe-tc-popover[data-visible="true"] {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
+/* Header row: kind badge + timestamp on the right */
 .tpe-tc-popover-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px 8px;
+  padding: 9px 12px 8px;
   border-bottom: 1px solid var(--border, #e8e8e5);
 }
 
@@ -103,34 +104,68 @@ del[data-track-change] {
   gap: 4px;
   padding: 2px 8px;
   border-radius: var(--radius-full, 9999px);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 .tpe-tc-kind-badge[data-kind="insert"] {
   background: var(--success-soft, rgba(5,150,105,0.10));
   color: var(--success, #059669);
-  border: 1px solid var(--success, #059669);
+  border: 1px solid rgba(5,150,105,0.3);
 }
 .tpe-tc-kind-badge[data-kind="delete"] {
   background: var(--danger-soft, rgba(220,38,38,0.08));
   color: var(--danger, #dc2626);
-  border: 1px solid var(--danger, #dc2626);
+  border: 1px solid rgba(220,38,38,0.25);
+}
+.tpe-tc-header-meta {
+  font-size: 11px;
+  color: var(--fg-muted, #6b6b68);
+  flex-shrink: 0;
 }
 
-.tpe-tc-popover-body {
-  padding: 8px 12px 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+/* Changed text preview */
+.tpe-tc-diff-preview {
+  margin: 8px 12px 0;
+  padding: 6px 8px;
+  border-radius: var(--radius-md, 6px);
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-word;
+  max-height: 72px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
-.tpe-tc-author-row {
+.tpe-tc-diff-preview[data-kind="insert"] {
+  background: var(--success-soft, rgba(5,150,105,0.08));
+  color: var(--success, #059669);
+  border-left: 2px solid var(--success, #059669);
+}
+.tpe-tc-diff-preview[data-kind="delete"] {
+  background: var(--danger-soft, rgba(220,38,38,0.07));
+  color: var(--danger, #dc2626);
+  text-decoration: line-through;
+  text-decoration-color: var(--danger, #dc2626);
+  border-left: 2px solid var(--danger, #dc2626);
+}
+.tpe-tc-diff-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-faint, #a8a8a5);
+  padding: 8px 12px 2px;
+}
+
+/* Author row */
+.tpe-tc-popover-body {
+  padding: 6px 12px 8px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 500;
-  color: var(--fg, #1a1a1a);
+  gap: 7px;
 }
 .tpe-tc-author-avatar {
   width: 22px;
@@ -138,22 +173,23 @@ del[data-track-change] {
   border-radius: 50%;
   background: var(--accent-soft, rgba(37,99,235,0.12));
   color: var(--accent, #2563eb);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.tpe-tc-meta {
-  font-size: 11px;
-  color: var(--fg-muted, #6b6b68);
+.tpe-tc-author-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg, #1a1a1a);
 }
 
 .tpe-tc-popover-actions {
   display: flex;
   gap: 6px;
-  padding: 8px 12px 10px;
+  padding: 0 12px 12px;
 }
 .tpe-tc-btn {
   flex: 1;
@@ -161,7 +197,7 @@ del[data-track-change] {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 5px 10px;
+  padding: 6px 10px;
   border-radius: var(--radius-md, 6px);
   font-size: 12px;
   font-weight: 600;
@@ -174,7 +210,7 @@ del[data-track-change] {
   white-space: nowrap;
 }
 .tpe-tc-btn[data-disabled="true"] {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 .tpe-tc-btn-accept {
@@ -391,32 +427,51 @@ function popoverPlugin(editor: Editor): Plugin {
         const tsAttr = el.getAttribute("data-timestamp");
         const ts = tsAttr ? Number(tsAttr) : NaN;
 
+        // Collect all sibling elements that share the same changeId so the
+        // preview shows the full logical change, not just the hovered fragment.
+        let changedText = "";
+        if (changeId) {
+          const allMarks = document.querySelectorAll<HTMLElement>(
+            `[data-track-change][data-change-id="${CSS.escape(changeId)}"]`,
+          );
+          changedText = Array.from(allMarks)
+            .map((m) => m.textContent ?? "")
+            .join("");
+        }
+        if (!changedText) changedText = el.textContent ?? "";
+        // Truncate very long changes for display
+        const MAX_PREVIEW = 120;
+        const previewText =
+          changedText.length > MAX_PREVIEW
+            ? `${changedText.slice(0, MAX_PREVIEW)}…`
+            : changedText;
+
         const storage = getStorage();
         const actor = storage?.author ?? null;
         const canAct = canActOnChange(actor, authorId);
-        const hasRole =
-          !actor || (actor.roles ?? []).length === 0 || actor.roles?.includes("author");
 
-        const kindLabel = kind === "insert" ? "Insertion" : "Deletion";
-        const kindIcon = kind === "insert" ? "+" : "−";
-        const metaText = Number.isFinite(ts) ? formatRelative(ts) : "";
+        const kindLabel = kind === "insert" ? "Inserted" : "Deleted";
+        const kindIcon  = kind === "insert" ? "+" : "−";
+        const metaText  = Number.isFinite(ts) ? formatRelative(ts) : "";
 
         pop.innerHTML = `
 <div class="tpe-tc-popover-header">
   <span class="tpe-tc-kind-badge" data-kind="${kind}">${kindIcon} ${escapeHtml(kindLabel)}</span>
+  ${metaText ? `<span class="tpe-tc-header-meta">${escapeHtml(metaText)}</span>` : ""}
 </div>
+${previewText ? `
+<div class="tpe-tc-diff-label">${kind === "insert" ? "Added" : "Removed"}</div>
+<div class="tpe-tc-diff-preview" data-kind="${kind}">${escapeHtml(previewText)}</div>
+` : ""}
 <div class="tpe-tc-popover-body">
-  <div class="tpe-tc-author-row">
-    <span class="tpe-tc-author-avatar">${escapeHtml(initials(author))}</span>
-    <span>${escapeHtml(author)}</span>
-  </div>
-  ${metaText ? `<div class="tpe-tc-meta">${escapeHtml(metaText)}</div>` : ""}
+  <span class="tpe-tc-author-avatar">${escapeHtml(initials(author))}</span>
+  <span class="tpe-tc-author-name">${escapeHtml(author)}</span>
 </div>
 <div class="tpe-tc-popover-actions">
-  <button class="tpe-tc-btn tpe-tc-btn-accept" data-change-id="${escapeHtml(changeId ?? "")}" data-disabled="${canAct ? "false" : "true"}" title="${canAct ? "Accept this change" : "Only authors can accept others' changes"}">✓ Accept</button>
-  <button class="tpe-tc-btn tpe-tc-btn-reject" data-change-id="${escapeHtml(changeId ?? "")}" data-disabled="${canAct ? "false" : "true"}" title="${canAct ? "Reject this change" : "Only authors can reject others' changes"}">✕ Reject</button>
+  <button class="tpe-tc-btn tpe-tc-btn-accept" data-change-id="${escapeHtml(changeId ?? "")}" data-disabled="${canAct ? "false" : "true"}" title="${canAct ? "Accept this change" : "Only the document author can accept others’ changes"}">✓ Accept</button>
+  <button class="tpe-tc-btn tpe-tc-btn-reject" data-change-id="${escapeHtml(changeId ?? "")}" data-disabled="${canAct ? "false" : "true"}" title="${canAct ? "Reject this change" : "Only the document author can reject others’ changes"}">✕ Reject</button>
 </div>
-${!canAct ? `<div class="tpe-tc-permission-note">Authors can accept/reject all changes</div>` : ""}
+${!canAct ? `<div class="tpe-tc-permission-note">Only authors can accept or reject changes</div>` : ""}
 `;
 
         // Wire up buttons
@@ -426,35 +481,42 @@ ${!canAct ? `<div class="tpe-tc-permission-note">Authors can accept/reject all c
         acceptBtn?.addEventListener("click", (e) => {
           e.stopPropagation();
           if (acceptBtn.getAttribute("data-disabled") === "true") return;
-          if (changeId) {
-            editor.chain().focus().acceptChange(changeId).run();
-          }
+          if (changeId) editor.chain().focus().acceptChange(changeId).run();
           doHide();
         });
 
         rejectBtn?.addEventListener("click", (e) => {
           e.stopPropagation();
           if (rejectBtn.getAttribute("data-disabled") === "true") return;
-          if (changeId) {
-            editor.chain().focus().rejectChange(changeId).run();
-          }
+          if (changeId) editor.chain().focus().rejectChange(changeId).run();
           doHide();
         });
 
-        // Position: prefer below the mark, flip above if clipped
+        // ── Positioning ────────────────────────────────────────────────
+        // The popover is position:fixed, so coordinates come directly from
+        // getBoundingClientRect() — no scrollY/scrollX adjustment needed.
+        // Previous code added window.scrollY which caused the popover to
+        // drift below the mark on any scrolled page.
+        const POP_W = 280;
+        const POP_H = 200; // conservative estimate; actual height rendered after innerHTML
+
         const rect = el.getBoundingClientRect();
-        const popH = 160; // rough height estimate before render
         const spaceBelow = window.innerHeight - rect.bottom;
-        const top =
-          spaceBelow >= popH + 10
-            ? rect.bottom + window.scrollY + 6
-            : rect.top + window.scrollY - popH - 6;
-        const left = Math.min(
-          rect.left + window.scrollX,
-          window.innerWidth - 340,
-        );
-        pop.style.top = `${Math.max(4, top)}px`;
-        pop.style.left = `${Math.max(4, left)}px`;
+        const spaceAbove = rect.top;
+
+        // Prefer below the mark; flip above only if below is too tight
+        const top = spaceBelow >= POP_H + 8
+          ? rect.bottom + 6
+          : spaceAbove >= POP_H + 8
+            ? rect.top - POP_H - 6
+            : rect.bottom + 6; // fallback: below even if tight
+
+        // Horizontally center on the mark, clamped to viewport
+        const idealLeft = rect.left + rect.width / 2 - POP_W / 2;
+        const left = Math.max(8, Math.min(idealLeft, window.innerWidth - POP_W - 8));
+
+        pop.style.top  = `${Math.max(8, top)}px`;
+        pop.style.left = `${left}px`;
         pop.setAttribute("data-visible", "true");
       };
 
