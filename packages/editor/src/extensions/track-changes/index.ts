@@ -5,6 +5,7 @@ import type {
 import { Insertion, Deletion } from "./marks";
 import { TrackChanges } from "./trackChanges";
 import { TrackChangesOverlay } from "./TrackChangesOverlay";
+import { IconTrackChanges, IconAcceptAll, IconRejectAll } from "../../react/icons";
 
 export interface TrackChangesFeatureConfig {
   defaultActive?: boolean;
@@ -51,26 +52,30 @@ export const trackChangesModule: EditorExtensionModule = {
     ];
   },
   toolbar: () => [
+    { kind: "divider", id: "review-divider" },
     {
       kind: "button",
       id: "trackChangesToggle",
-      label: "✎ Track",
+      label: "Track changes",
       title: "Toggle track changes",
+      icon: IconTrackChanges(),
       isActive: (editor) => editor.storage.trackChanges?.active === true,
       onRun: (editor) => editor.commands.toggleTrackChanges(),
     },
     {
       kind: "button",
       id: "acceptAll",
-      label: "✓ Accept all",
-      title: "Accept all tracked changes",
+      label: "Accept all",
+      title: "Accept all changes",
+      icon: IconAcceptAll(),
       onRun: (editor) => editor.chain().focus().acceptAllChanges().run(),
     },
     {
       kind: "button",
       id: "rejectAll",
-      label: "✕ Reject all",
-      title: "Reject all tracked changes",
+      label: "Reject all",
+      title: "Reject all changes",
+      icon: IconRejectAll(),
       onRun: (editor) => editor.chain().focus().rejectAllChanges().run(),
     },
   ],

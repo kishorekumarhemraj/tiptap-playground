@@ -1,20 +1,24 @@
 import type { EditorExtensionModule } from "../../core/types";
 import { BlockInstruction } from "./BlockInstruction";
+import { IconInstruction } from "../../react/icons";
 
 export const blockInstructionModule: EditorExtensionModule = {
   id: "block-instruction",
   name: "Block instructions",
   description:
-    "Stores an optional one-line instruction on any top-level block and renders it as a helper above the block. Authoring-only - documents never set new instructions, they only display what the template carries.",
-  tiptap: () => [BlockInstruction],
+    "Stores an optional one-line instruction on any top-level block and renders it as a helper above the block. Authoring-only — documents never set new instructions, they only display what the template carries.",
+  tiptap: (ctx) => [BlockInstruction.configure({ mode: ctx.mode })],
   toolbar: (ctx) => {
-    if (ctx.mode !== "template") return [];
+    // Instruction hints are a document-mode feature — template authors see
+    // the instruction text directly in the section header's editable input.
+    if (ctx.mode !== "document") return [];
     return [
       {
         kind: "button",
         id: "toggleInstructions",
-        label: "💡 Show Instructions",
-        title: "Toggle block instructions visibility",
+        label: "Show instructions",
+        title: "Toggle instruction hints",
+        icon: IconInstruction(),
         isActive: (editor) =>
           editor.storage.blockInstruction?.showInstructions === true,
         onRun: (editor) => editor.commands.toggleInstructions(),

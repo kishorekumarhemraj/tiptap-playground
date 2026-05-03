@@ -3,6 +3,7 @@ import type {
   EditorExtensionModule,
 } from "../../core/types";
 import { Versioning } from "./versioning";
+import { IconSaveVersion } from "../../react/icons";
 
 function policyContextFromCtx(ctx: EditorExtensionContext) {
   return () => ({
@@ -33,8 +34,9 @@ export const versioningModule: EditorExtensionModule = {
     {
       kind: "button",
       id: "saveVersion",
-      label: "💾 Save version",
-      title: "Capture a named snapshot of the current document",
+      label: "Save version",
+      title: "Save a named version snapshot",
+      icon: IconSaveVersion(),
       onRun: (editor) => {
         const label =
           typeof window !== "undefined"

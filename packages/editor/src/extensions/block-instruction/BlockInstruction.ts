@@ -1,6 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import type { EditorMode } from "../../core/types";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -70,8 +71,12 @@ function detachStyles() {
  * fighting CSS specificity or the `::before` content-model rules on
  * `<p>` elements.
  */
-export const BlockInstruction = Extension.create({
+export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
   name: "blockInstruction",
+
+  addOptions() {
+    return { mode: "document" as EditorMode };
+  },
 
   addGlobalAttributes() {
     // `section` and `editableField` declare `instruction` themselves
@@ -152,6 +157,11 @@ export const BlockInstruction = Extension.create({
       return DecorationSet.create(doc, decos);
     }
 
+    // In template mode the instruction is already editable in the
+    // SectionView header — rendering it again as a floating widget
+    // would duplicate it. Decorations are document-mode only.
+    const isDocumentMode = this.options.mode === "document";
+
     return [
       new Plugin({
         key: instructionKey,
@@ -162,15 +172,16 @@ export const BlockInstruction = Extension.create({
         // Rebuild only when the doc changes or the toggle meta fires.
         state: {
           init(_, { doc }) {
-            return buildDecoSet(
-              doc,
-              editor.storage.blockInstruction?.showInstructions ?? true,
-            );
+            const show =
+              isDocumentMode &&
+              (editor.storage.blockInstruction?.showInstructions ?? true);
+            return buildDecoSet(doc, show);
           },
           apply(tr, set) {
             const toggleMeta = tr.getMeta(instructionKey);
             const show =
-              editor.storage.blockInstruction?.showInstructions ?? true;
+              isDocumentMode &&
+              (editor.storage.blockInstruction?.showInstructions ?? true);
             if (toggleMeta !== undefined || tr.docChanged) {
               return buildDecoSet(tr.doc, show);
             }

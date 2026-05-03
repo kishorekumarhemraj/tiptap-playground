@@ -1,74 +1,156 @@
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--border, #e8e8e5);
-  background: var(--bg, #ffffff);
+/* ─── Toolbar shell ──────────────────────────────────────────────────────── */
+/*
+ * Tooltips are JS-portalled to document.body (see Toolbar.tsx), so we
+ * no longer need overflow:visible tricks here.  overflow:hidden on the
+ * outer element would also be fine — it only needs to handle the sticky
+ * strip itself.
+ */
+.toolbarOuter {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 20;
+  background: var(--bg, #ffffff);
+  border-bottom: 1px solid var(--border, #e8e8e5);
 }
 
-.button {
-  appearance: none;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--fg-muted, #6b6b68);
+.toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 1px;
   padding: 4px 8px;
-  border-radius: var(--radius-md, 6px);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  min-height: 28px;
-  min-width: 28px;
+  min-height: 40px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Icon button ────────────────────────────────────────────────────────── */
+.button {
+  /* Reset */
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+
+  /* Layout */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md, 6px);
+  flex-shrink: 0;
+
+  /* Typography & colour */
+  color: var(--fg-muted, #6b6b68);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+
+  /* Interaction */
+  cursor: pointer;
   transition:
     background var(--transition-fast, 100ms ease),
     color var(--transition-fast, 100ms ease);
 }
 
 .button:hover:not(:disabled) {
-  background: var(--bg-muted, #f8f8f6);
+  background: var(--bg-muted, #f4f4f2);
   color: var(--fg, #1a1a1a);
 }
 
 .button.active {
-  background: var(--accent-soft, rgba(37, 99, 235, 0.1));
+  background: var(--accent-soft, rgba(37, 99, 235, 0.10));
   color: var(--accent, #2563eb);
+}
+
+.button.active:hover {
+  background: var(--accent-soft-hover, rgba(37, 99, 235, 0.16));
 }
 
 .button:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Text label inside a button (used when no SVG icon is provided) */
+.textLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* Tooltips are rendered via JS into document.body (see Toolbar.tsx).
+   Pure-CSS ::before/::after pseudo-elements cannot reliably escape a
+   flex-sibling's paint order, so we use a portalled position:fixed div. */
+
+/* ─── Divider ────────────────────────────────────────────────────────────── */
+.divider {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: var(--border, #e8e8e5);
+  margin: 0 4px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* ─── Dropdown ───────────────────────────────────────────────────────────── */
+.dropdownWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .dropdown {
+  /* Reset native appearance */
+  appearance: none;
+  -webkit-appearance: none;
+
+  /* Sizing */
   height: 28px;
+  padding: 0 24px 0 8px;
+
+  /* Style */
   border: 1px solid var(--border, #e8e8e5);
   background: var(--bg, #ffffff);
   color: var(--fg, #1a1a1a);
   border-radius: var(--radius-md, 6px);
   font: inherit;
   font-size: 12px;
-  padding: 0 8px;
+  font-weight: 500;
   cursor: pointer;
-  transition: border-color var(--transition-fast, 100ms ease);
+  transition:
+    border-color var(--transition-fast, 100ms ease),
+    background var(--transition-fast, 100ms ease);
+  outline: none;
 }
 
 .dropdown:hover {
   border-color: var(--border-strong, #d0cec8);
+  background: var(--bg-muted, #f4f4f2);
 }
 
-.divider {
-  display: inline-block;
-  width: 1px;
-  height: 18px;
-  background: var(--border, #e8e8e5);
-  margin: 0 4px;
-  flex-shrink: 0;
+.dropdown:focus-visible {
+  border-color: var(--accent, #2563eb);
+  box-shadow: 0 0 0 2px var(--accent-soft, rgba(37, 99, 235, 0.2));
+}
+
+.dropdownChevron {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-muted, #6b6b68);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
 }
