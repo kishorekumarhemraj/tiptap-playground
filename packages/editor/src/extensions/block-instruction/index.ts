@@ -7,10 +7,11 @@ export const blockInstructionModule: EditorExtensionModule = {
   name: "Block instructions",
   description:
     "Stores an optional one-line instruction on any top-level block and renders it as a helper above the block. Authoring-only — documents never set new instructions, they only display what the template carries.",
-  tiptap: () => [BlockInstruction],
+  tiptap: (ctx) => [BlockInstruction.configure({ mode: ctx.mode })],
   toolbar: (ctx) => {
-    // Template-only — hidden in document mode (REQ-TA-12, REQ-TA-13)
-    if (ctx.mode !== "template") return [];
+    // Instruction hints are a document-mode feature — template authors see
+    // the instruction text directly in the section header's editable input.
+    if (ctx.mode !== "document") return [];
     return [
       {
         kind: "button",
