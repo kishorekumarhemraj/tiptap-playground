@@ -1,8 +1,136 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { Editor } from "@tiptap/react";
 import type { ToolbarItem } from "../core/types";
 import styles from "./Toolbar.module.css";
+
+// ─── JS-driven tooltip (portalled to document.body) ────────────────────────
+//
+// Pure-CSS ::before/::after tooltips cannot escape a flex-sibling's paint
+// order: even if .toolbarOuter has z-index:20, a sibling painted later in
+// document order (like PagesControls) covers the pseudo-elements.
+// Portalling to document.body at position:fixed bypasses all stacking
+// context issues, exactly as Floating UI / Tippy.js do.
+
+const TOOLTIP_ID = "tpe-toolbar-tooltip";
+const ARROW_ID   = "tpe-toolbar-tooltip-arrow";
+
+function ensureTooltipDom() {
+  if (typeof document === "undefined") return null;
+  let tip = document.getElementById(TOOLTIP_ID);
+  if (!tip) {
+    tip = document.createElement("div");
+    tip.id = TOOLTIP_ID;
+    tip.setAttribute("role", "tooltip");
+    tip.style.cssText = [
+      "position:fixed",
+      "z-index:9999",
+      "padding:4px 8px",
+      "background:var(--fg,#1a1a1a)",
+      "color:var(--bg,#ffffff)",
+      "font-size:11px",
+      "font-weight:500",
+      "font-family:var(--font-sans,sans-serif)",
+      "line-height:1.4",
+      "border-radius:5px",
+      "box-shadow:0 4px 12px rgba(0,0,0,0.2)",
+      "pointer-events:none",
+      "white-space:nowrap",
+      "opacity:0",
+      "transition:opacity 120ms ease,transform 120ms ease",
+      "transform:translateY(-4px)",
+      "letter-spacing:0.01em",
+    ].join(";");
+    document.body.appendChild(tip);
+  }
+  let arrow = document.getElementById(ARROW_ID);
+  if (!arrow) {
+    arrow = document.createElement("div");
+    arrow.id = ARROW_ID;
+    arrow.style.cssText = [
+      "position:fixed",
+      "z-index:9999",
+      "width:0",
+      "height:0",
+      "pointer-events:none",
+      "border-left:5px solid transparent",
+      "border-right:5px solid transparent",
+      "opacity:0",
+      "transition:opacity 120ms ease",
+    ].join(";");
+    document.body.appendChild(arrow);
+  }
+  return { tip, arrow };
+}
+
+let showTimer: number | undefined;
+let hideTimer: number | undefined;
+
+function showTooltip(btn: HTMLElement) {
+  if (hideTimer !== undefined) { clearTimeout(hideTimer); hideTimer = undefined; }
+  showTimer = window.setTimeout(() => {
+    const dom = ensureTooltipDom();
+    if (!dom) return;
+    const { tip, arrow } = dom;
+    const text = btn.getAttribute("data-tooltip") ?? "";
+    tip.textContent = text;
+    tip.style.opacity = "0";
+    tip.style.display = "block";
+
+    const TIP_GAP = 6;
+    const ARROW_H = 5;
+    const rect = btn.getBoundingClientRect();
+    const tipW = tip.offsetWidth;
+    const tipH = tip.offsetHeight;
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const goBelow = spaceBelow >= tipH + ARROW_H + TIP_GAP + 4
+                 || spaceBelow >= spaceAbove;
+
+    // Horizontal: centre on button, clamped to viewport
+    const idealLeft = rect.left + rect.width / 2 - tipW / 2;
+    const left = Math.max(8, Math.min(idealLeft, window.innerWidth - tipW - 8));
+
+    if (goBelow) {
+      const top = rect.bottom + ARROW_H + TIP_GAP;
+      tip.style.top   = `${top}px`;
+      tip.style.left  = `${left}px`;
+      // Arrow points up (▲) between button and pill
+      arrow.style.top    = `${rect.bottom + TIP_GAP - 1}px`;
+      arrow.style.left   = `${rect.left + rect.width / 2 - 5}px`;
+      arrow.style.borderBottom = `${ARROW_H}px solid var(--fg,#1a1a1a)`;
+      arrow.style.borderTop    = "none";
+    } else {
+      const top = rect.top - tipH - ARROW_H - TIP_GAP;
+      tip.style.top  = `${Math.max(8, top)}px`;
+      tip.style.left = `${left}px`;
+      // Arrow points down (▼) between pill and button
+      arrow.style.top    = `${rect.top - ARROW_H - TIP_GAP + 1}px`;
+      arrow.style.left   = `${rect.left + rect.width / 2 - 5}px`;
+      arrow.style.borderTop    = `${ARROW_H}px solid var(--fg,#1a1a1a)`;
+      arrow.style.borderBottom = "none";
+    }
+
+    tip.style.transform = goBelow ? "translateY(-4px)" : "translateY(4px)";
+    // Force a reflow so the transition fires
+    void tip.offsetWidth;
+    tip.style.opacity   = "1";
+    tip.style.transform = "translateY(0)";
+    arrow.style.opacity = "1";
+  }, 300);
+}
+
+function hideTooltip() {
+  if (showTimer !== undefined) { clearTimeout(showTimer); showTimer = undefined; }
+  hideTimer = window.setTimeout(() => {
+    const tip   = document.getElementById(TOOLTIP_ID);
+    const arrow = document.getElementById(ARROW_ID);
+    if (tip)   { tip.style.opacity = "0"; tip.style.transform = "translateY(-4px)"; }
+    if (arrow) { arrow.style.opacity = "0"; }
+  }, 80);
+}
 
 export interface ToolbarProps {
   editor: Editor | null;
@@ -24,6 +152,35 @@ export interface ToolbarProps {
  * - Active state: accent-blue fill; disabled state: 35% opacity.
  */
 export function Toolbar({ editor, items, className }: ToolbarProps) {
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // Wire up JS tooltip via event delegation on the toolbar container.
+  // This is more reliable than CSS ::before/::after pseudo-elements which
+  // cannot escape a flex-sibling stacking context.
+  useEffect(() => {
+    const el = toolbarRef.current;
+    if (!el) return;
+
+    const onOver = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-tooltip]");
+      if (!btn || btn.hasAttribute("disabled")) { hideTooltip(); return; }
+      showTooltip(btn);
+    };
+    const onOut = (e: MouseEvent) => {
+      const related = e.relatedTarget as HTMLElement | null;
+      if (related?.closest("[data-tooltip]")) return;
+      hideTooltip();
+    };
+
+    el.addEventListener("mouseover", onOver);
+    el.addEventListener("mouseout", onOut);
+    return () => {
+      el.removeEventListener("mouseover", onOver);
+      el.removeEventListener("mouseout", onOut);
+      hideTooltip();
+    };
+  }, []);
+
   if (!editor) {
     return (
       <div
@@ -37,6 +194,7 @@ export function Toolbar({ editor, items, className }: ToolbarProps) {
   return (
     <div className={`${styles.toolbarOuter} ${className ?? ""}`.trim()}>
       <div
+        ref={toolbarRef}
         className={styles.toolbar}
         role="toolbar"
         aria-label="Editor toolbar"
@@ -55,10 +213,11 @@ export function Toolbar({ editor, items, className }: ToolbarProps) {
 
         if (item.kind === "dropdown") {
           return (
-            <div key={item.id} className={styles.dropdownWrapper} data-tooltip={item.label}>
+            <div key={item.id} className={styles.dropdownWrapper}>
               <select
                 className={styles.dropdown}
                 aria-label={item.label}
+                data-tooltip={item.label}
                 onChange={(e) => {
                   const selected = item.items.find((i) => i.id === e.target.value);
                   if (selected) {
