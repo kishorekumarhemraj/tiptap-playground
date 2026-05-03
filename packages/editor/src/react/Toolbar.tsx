@@ -16,7 +16,8 @@ export interface ToolbarProps {
  * Design principles:
  * - 28×28 px icon-only buttons; text labels only where no icon is provided.
  * - CSS-driven tooltips via `data-tooltip` — no JS, no library dependency.
- *   Tooltip appears above the button after a short delay.
+ *   Tooltip appears BELOW each button (into the document area) so it is
+ *   never blocked by the sticky header above.
  * - Keyboard shortcuts shown inside the tooltip (passed via `item.title`).
  * - Dividers rendered as hairline separators between logical groups.
  * - Dropdowns use a styled `<select>` with a chevron overlay.
@@ -34,11 +35,12 @@ export function Toolbar({ editor, items, className }: ToolbarProps) {
   }
 
   return (
-    <div
-      className={`${styles.toolbar} ${className ?? ""}`.trim()}
-      role="toolbar"
-      aria-label="Editor toolbar"
-    >
+    <div className={`${styles.toolbarOuter} ${className ?? ""}`.trim()}>
+      <div
+        className={styles.toolbar}
+        role="toolbar"
+        aria-label="Editor toolbar"
+      >
       {items.map((item) => {
         if (item.kind === "divider") {
           return (
@@ -105,6 +107,7 @@ export function Toolbar({ editor, items, className }: ToolbarProps) {
           </button>
         );
       })}
+      </div>
     </div>
   );
 }

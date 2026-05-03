@@ -1,18 +1,39 @@
 /* ─── Toolbar shell ──────────────────────────────────────────────────────── */
+/*
+ * Two-layer layout so tooltips are never clipped.
+ *
+ * Outer (.toolbarOuter) — sticky positioning, border, background.
+ *   overflow: visible so pseudo-element tooltips that extend below the
+ *   toolbar are not clipped. DO NOT set overflow-x here: setting either
+ *   overflow axis to non-visible forces the other axis to auto (CSS spec),
+ *   which would clip the tooltips.
+ *
+ * Inner (.toolbar) — the actual flex row of buttons.
+ *   overflow-x: auto handles horizontal scroll on narrow viewports.
+ *   Since this element is not a stacking-context parent of the tooltips
+ *   (the buttons create their own via position:relative), horizontal
+ *   clipping only clips the scrollable content, not the pseudo-elements
+ *   that escape downward.
+ */
+.toolbarOuter {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg, #ffffff);
+  border-bottom: 1px solid var(--border, #e8e8e5);
+  /* overflow visible so below-button tooltips are never cut off */
+  overflow: visible;
+}
+
 .toolbar {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 1px;
   padding: 4px 8px;
-  border-bottom: 1px solid var(--border, #e8e8e5);
-  background: var(--bg, #ffffff);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  min-height: 40px;
   overflow-x: auto;
   scrollbar-width: none;
-  min-height: 40px;
 }
 
 .toolbar::-webkit-scrollbar {
@@ -83,49 +104,58 @@
 
 /* ─── Tooltip ────────────────────────────────────────────────────────────── */
 /*
- * Pure CSS tooltip triggered on hover. The tooltip text comes from the
- * `data-tooltip` attribute so no JS is required.
+ * Pure CSS tooltip that appears BELOW each button.
+ * Pointing downward (into the document) ensures it is never blocked by
+ * sticky headers or banner elements above the toolbar.
  *
  * Anatomy:
- *   ::before  — the text bubble
- *   ::after   — the arrow pointing down to the button
+ *   ::before  — dark pill with the tooltip text
+ *   ::after   — upward-pointing arrow connecting pill to button
+ *
+ * The button has position:relative so ::before/::after are positioned
+ * relative to the button. Both escape below the toolbar into the page.
+ * The outer .toolbarOuter has overflow:visible so nothing clips them.
  */
 .button[data-tooltip]::before,
 .button[data-tooltip]::after {
-  content: "";
   position: absolute;
-  bottom: calc(100% + 6px);
   left: 50%;
-  transform: translateX(-50%);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 120ms ease, transform 120ms ease;
-  transform-origin: bottom center;
-  transform: translateX(-50%) scale(0.92);
+  transition: opacity 100ms ease, transform 100ms ease;
   white-space: nowrap;
-  z-index: 100;
+  /* z-index relative to the button's stacking context — high enough
+     to paint over document content below */
+  z-index: 9999;
 }
 
+/* Arrow — upward triangle that connects the pill to the button */
+.button[data-tooltip]::after {
+  content: "";
+  top: calc(100% + 2px);
+  transform: translateX(-50%) scale(0.85);
+  transform-origin: top center;
+  border: 5px solid transparent;
+  border-bottom-color: var(--fg, #1a1a1a);
+  border-top: none;
+}
+
+/* Pill — the actual label */
 .button[data-tooltip]::before {
   content: attr(data-tooltip);
+  top: calc(100% + 10px);
+  transform: translateX(-50%) scale(0.9);
+  transform-origin: top center;
   background: var(--fg, #1a1a1a);
   color: var(--bg, #ffffff);
   font-size: 11px;
   font-weight: 500;
   font-family: var(--font-sans, sans-serif);
-  line-height: 1.3;
+  line-height: 1.4;
   padding: 4px 8px;
   border-radius: 5px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   letter-spacing: 0.01em;
-}
-
-.button[data-tooltip]::after {
-  content: "";
-  bottom: calc(100% + 2px);
-  border: 4px solid transparent;
-  border-top-color: var(--fg, #1a1a1a);
-  border-bottom: none;
 }
 
 .button[data-tooltip]:hover::before,
