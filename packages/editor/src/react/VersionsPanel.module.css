@@ -160,3 +160,16 @@
   opacity: 0.7;
   text-decoration: underline;
 }
+
+.linkButtonDanger {
+  color: var(--danger, #dc2626);
+}
+
+/* ── Embedded mode (inside RightPanel tabs) ── */
+.embeddedPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
