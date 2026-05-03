@@ -23,6 +23,9 @@ function ensureTooltipDom() {
     tip = document.createElement("div");
     tip.id = TOOLTIP_ID;
     tip.setAttribute("role", "tooltip");
+    // Use design-token CSS variables so the tooltip adapts to light/dark theme.
+    // --fg  = near-black in light mode, near-white in dark mode (inverse of bg)
+    // --bg  = white/light in light mode, dark in dark mode
     tip.style.cssText = [
       "position:fixed",
       "z-index:9999",
@@ -33,13 +36,13 @@ function ensureTooltipDom() {
       "font-weight:500",
       "font-family:var(--font-sans,sans-serif)",
       "line-height:1.4",
-      "border-radius:5px",
-      "box-shadow:0 4px 12px rgba(0,0,0,0.2)",
+      "border-radius:var(--radius-md,6px)",
+      "box-shadow:0 2px 8px rgba(0,0,0,0.18)",
       "pointer-events:none",
       "white-space:nowrap",
       "opacity:0",
       "transition:opacity 120ms ease,transform 120ms ease",
-      "transform:translateY(-4px)",
+      "transform:translateY(0)",
       "letter-spacing:0.01em",
     ].join(";");
     document.body.appendChild(tip);
@@ -75,51 +78,66 @@ function showTooltip(btn: HTMLElement) {
     const { tip, arrow } = dom;
     const text = btn.getAttribute("data-tooltip") ?? "";
     tip.textContent = text;
-    tip.style.opacity = "0";
-    tip.style.display = "block";
 
-    const TIP_GAP = 6;
-    const ARROW_H = 5;
+    // Measure after setting content so tipW/tipH are accurate.
+    // The element stays in the DOM between calls (opacity:0), so offsetWidth
+    // is always readable without forcing display:block.
+    const ARROW_H = 6;  // height of the CSS border-triangle
+    const BTN_GAP = 6;  // gap from button edge to the TIP UNIT (arrow+pill)
+
     const rect = btn.getBoundingClientRect();
     const tipW = tip.offsetWidth;
     const tipH = tip.offsetHeight;
 
+    // Prefer below; fall back above only when there genuinely isn't room below
+    // AND there is more room above.
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const goBelow = spaceBelow >= tipH + ARROW_H + TIP_GAP + 4
-                 || spaceBelow >= spaceAbove;
+    const unitH = ARROW_H + tipH;
+    const goBelow = spaceBelow >= unitH + BTN_GAP + 4 || spaceBelow >= spaceAbove;
 
     // Horizontal: centre on button, clamped to viewport
     const idealLeft = rect.left + rect.width / 2 - tipW / 2;
     const left = Math.max(8, Math.min(idealLeft, window.innerWidth - tipW - 8));
+    const arrowLeft = rect.left + rect.width / 2 - 5; // centre of 10px-wide arrow
 
     if (goBelow) {
-      const top = rect.bottom + ARROW_H + TIP_GAP;
-      tip.style.top   = `${top}px`;
-      tip.style.left  = `${left}px`;
-      // Arrow points up (▲) between button and pill
-      arrow.style.top    = `${rect.bottom + TIP_GAP - 1}px`;
-      arrow.style.left   = `${rect.left + rect.width / 2 - 5}px`;
+      // Arrow sits immediately above the pill — unit starts at rect.bottom + BTN_GAP
+      const arrowTop = rect.bottom + BTN_GAP;
+      const tipTop   = arrowTop + ARROW_H; // pill starts right below arrow
+
+      arrow.style.top    = `${arrowTop}px`;
+      arrow.style.left   = `${arrowLeft}px`;
       arrow.style.borderBottom = `${ARROW_H}px solid var(--fg,#1a1a1a)`;
       arrow.style.borderTop    = "none";
-    } else {
-      const top = rect.top - tipH - ARROW_H - TIP_GAP;
-      tip.style.top  = `${Math.max(8, top)}px`;
+
+      tip.style.top  = `${tipTop}px`;
       tip.style.left = `${left}px`;
-      // Arrow points down (▼) between pill and button
-      arrow.style.top    = `${rect.top - ARROW_H - TIP_GAP + 1}px`;
-      arrow.style.left   = `${rect.left + rect.width / 2 - 5}px`;
+    } else {
+      // Arrow sits immediately below the pill — unit bottom at rect.top - BTN_GAP
+      const arrowBottom = rect.top - BTN_GAP;
+      const arrowTop    = arrowBottom - ARROW_H;
+      const tipTop      = Math.max(8, arrowTop - tipH); // pill sits above arrow
+
+      arrow.style.top    = `${arrowTop}px`;
+      arrow.style.left   = `${arrowLeft}px`;
       arrow.style.borderTop    = `${ARROW_H}px solid var(--fg,#1a1a1a)`;
       arrow.style.borderBottom = "none";
+
+      tip.style.top  = `${tipTop}px`;
+      tip.style.left = `${left}px`;
     }
 
-    tip.style.transform = goBelow ? "translateY(-4px)" : "translateY(4px)";
-    // Force a reflow so the transition fires
+    // Animate in
+    tip.style.opacity   = "0";
+    tip.style.transform = goBelow ? "translateY(-3px)" : "translateY(3px)";
+    arrow.style.opacity = "0";
+    // Force a reflow so the CSS transition fires from the above values
     void tip.offsetWidth;
     tip.style.opacity   = "1";
     tip.style.transform = "translateY(0)";
     arrow.style.opacity = "1";
-  }, 300);
+  }, 250);
 }
 
 function hideTooltip() {
@@ -127,7 +145,7 @@ function hideTooltip() {
   hideTimer = window.setTimeout(() => {
     const tip   = document.getElementById(TOOLTIP_ID);
     const arrow = document.getElementById(ARROW_ID);
-    if (tip)   { tip.style.opacity = "0"; tip.style.transform = "translateY(-4px)"; }
+    if (tip)   { tip.style.opacity = "0"; }
     if (arrow) { arrow.style.opacity = "0"; }
   }, 80);
 }
