@@ -23,24 +23,25 @@
   opacity: 1;
 }
 
-/* ── Document mode: always-visible subtle boundary so authors know where to type */
+/* ── Document mode: invisible at rest, blue border only on interaction ── */
 .documentMode {
-  border-color: var(--accent-soft-border, rgba(37, 99, 235, 0.3));
-  background: var(--editable-bg, rgba(37, 99, 235, 0.03));
+  border-style: solid;
+  border-color: transparent;
+  background: transparent;
 }
 
 .documentMode:hover {
-  border-color: var(--accent-soft-border, rgba(37, 99, 235, 0.5));
-  background: var(--editable-bg, rgba(37, 99, 235, 0.05));
+  border-color: var(--blue, #2563eb);
+  background: rgba(37, 99, 235, 0.02);
 }
 
 .documentMode:focus-within {
-  border-color: var(--accent, #2563eb);
-  background: var(--editable-bg-active, rgba(37, 99, 235, 0.07));
+  border-color: var(--blue, #2563eb);
+  background: rgba(37, 99, 235, 0.03);
 }
 
 .documentMode .chip {
-  opacity: 0.6;
+  opacity: 0;
   transition: opacity 150ms ease;
 }
 
@@ -92,7 +93,7 @@
   color: var(--fg-faint, #a8a8a5);
 }
 
-/* ── Chip ─────────────────────────────────────────────────────────── */
+/* ── Chip (template mode floating label) ──────────────────────────── */
 .chip {
   position: absolute;
   top: -10px;
@@ -102,15 +103,40 @@
   gap: 4px;
   padding: 2px 8px;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  border-radius: 999px;
-  background: var(--bg, #fff);
+  background: var(--bg-card, #fff);
   color: var(--accent, #2563eb);
-  border: 1px solid var(--accent-soft-border, rgba(37, 99, 235, 0.35));
+  padding: 0 4px;
+  line-height: 1;
   user-select: none;
   pointer-events: none;
+}
+
+/* ── Edit hint (document mode hover affordance, top-right) ────────── */
+.editHint {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent, #2563eb);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast, 100ms ease);
+  user-select: none;
+}
+
+.documentMode:hover .editHint {
+  opacity: 1;
+}
+
+.documentMode:focus-within .editHint {
+  opacity: 0;
 }
 
 .chip svg {

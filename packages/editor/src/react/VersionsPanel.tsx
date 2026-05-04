@@ -27,6 +27,11 @@ export interface VersionsPanelProps {
    * and offer a Restore button. If not provided, the Preview button is hidden.
    */
   onPreviewRestore?: (snapshot: VersionSnapshot) => void;
+  /**
+   * When true, renders without the outer `<aside>` wrapper and header.
+   * Use this when embedding the panel inside a tabbed host container.
+   */
+  embedded?: boolean;
   className?: string;
 }
 
@@ -37,6 +42,7 @@ export function VersionsPanel({
   onCompare,
   onBeforeRestore,
   onPreviewRestore,
+  embedded,
   className,
 }: VersionsPanelProps) {
   const [snapshots, setSnapshots] = useState<VersionSnapshot[]>([]);
@@ -47,6 +53,7 @@ export function VersionsPanel({
   }, [editor]);
 
   if (!editor) {
+    if (embedded) return null;
     return (
       <aside
         className={`${styles.panel} ${className ?? ""}`.trim()}
@@ -89,12 +96,14 @@ export function VersionsPanel({
     diffSelection.right &&
     diffSelection.left !== diffSelection.right;
 
-  return (
-    <aside className={`${styles.panel} ${className ?? ""}`.trim()}>
-      <header className={styles.header}>
-        <span className={styles.headerTitle}>Versions</span>
-        <span className={styles.count}>{snapshots.length}</span>
-      </header>
+  const content = (
+    <>
+      {!embedded && (
+        <header className={styles.header}>
+          <span className={styles.headerTitle}>Versions</span>
+          <span className={styles.count}>{snapshots.length}</span>
+        </header>
+      )}
 
       <div className={styles.actions}>
         <button
@@ -113,7 +122,7 @@ export function VersionsPanel({
 
       {snapshots.length === 0 ? (
         <p className={styles.empty}>
-          No versions yet. Use <kbd>💾 Save version</kbd> in the toolbar.
+          No versions saved yet. Use <kbd>Save version</kbd> above.
         </p>
       ) : (
         <ul className={styles.list}>
@@ -153,7 +162,7 @@ export function VersionsPanel({
                   </button>
                   <button
                     type="button"
-                    className={styles.linkButton}
+                    className={`${styles.linkButton} ${styles.linkButtonDanger}`}
                     onClick={() => editor.deleteVersion(s.id)}
                   >
                     Delete
@@ -164,6 +173,16 @@ export function VersionsPanel({
           })}
         </ul>
       )}
+    </>
+  );
+
+  if (embedded) {
+    return <div className={`${styles.embeddedPanel} ${className ?? ""}`.trim()}>{content}</div>;
+  }
+
+  return (
+    <aside className={`${styles.panel} ${className ?? ""}`.trim()}>
+      {content}
     </aside>
   );
 }

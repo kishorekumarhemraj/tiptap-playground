@@ -12,13 +12,14 @@ import {
 } from "@tiptap-playground/editor";
 import {
   Editor,
-  VersionsPanel,
   DiffView,
   type DiffPaneVersion,
   type VersionsPanelHandle,
 } from "@tiptap-playground/editor/react";
 import { buildPlaygroundDrivers } from "./drivers";
+import { TopNav } from "./TopNav";
 import { ModeBanner } from "./ModeBanner";
+import { RightPanel } from "./RightPanel";
 import { PermissionToast } from "./PermissionToast";
 import styles from "./EditorShell.module.css";
 
@@ -76,7 +77,6 @@ function loadInitialContent(): JSONContent | string {
 }
 
 export function EditorShell() {
-  const [readOnly, setReadOnly] = useState(false);
   const [mode, setMode] = useState<EditorMode>("template");
   const [editor, setEditor] = useState<VersionsPanelHandle | null>(null);
   const [diffSelection, setDiffSelection] = useState<{
@@ -109,9 +109,9 @@ export function EditorShell() {
 
   // Both drivers and the event bus are created once and held in refs
   // so their identities stay stable across context rebuilds triggered
-  // by mode or readOnly toggles. Without this, the collaboration
-  // factory changes reference (breaking the session cache) and any
-  // external listeners bound to the old EventBus are silently orphaned.
+  // by mode changes. Without this, the collaboration factory changes
+  // reference (breaking the session cache) and any external listeners
+  // bound to the old EventBus are silently orphaned.
   const driversRef = useRef(buildPlaygroundDrivers(DOCUMENT_ID));
   const eventsRef = useRef(createEventBus());
 
@@ -144,7 +144,7 @@ export function EditorShell() {
         color: "#2383e2",
         roles: ["author"],
       },
-      readOnly,
+      readOnly: false,
       mode,
       features: {},
       claims: {},
@@ -152,7 +152,7 @@ export function EditorShell() {
       policy,
       events,
     };
-  }, [readOnly, mode]);
+  }, [mode]);
 
   const handleEditor = useCallback(
     (_handle: unknown, versionsPanelHandle: VersionsPanelHandle | null) => {
@@ -161,68 +161,10 @@ export function EditorShell() {
     [],
   );
 
-  const collabEnabled = !!context.drivers.collaboration;
-
   return (
     <div className={styles.shell}>
+      <TopNav mode={mode} onModeChange={setMode} />
       <ModeBanner mode={mode} />
-      <div className={styles.controls}>
-        <div className={styles.controlsLeft}>
-          <div
-            className={styles.segmented}
-            role="radiogroup"
-            aria-label="Editor mode"
-          >
-            <button
-              type="button"
-              role="radio"
-              aria-checked={mode === "template"}
-              className={styles.segmentedButton}
-              data-active={mode === "template"}
-              onClick={() => setMode("template")}
-              title="Author the template: add sections, editable regions, and form fields"
-            >
-              Template
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={mode === "document"}
-              className={styles.segmentedButton}
-              data-active={mode === "document"}
-              onClick={() => setMode("document")}
-              title="Fill in a document: structure is fixed; only editable regions and fields accept input"
-            >
-              Document
-            </button>
-          </div>
-          <label className={styles.toggleLabel}>
-            <span className={styles.switchWrapper}>
-              <input
-                type="checkbox"
-                checked={readOnly}
-                onChange={(e) => setReadOnly(e.target.checked)}
-              />
-              <span className={styles.switchTrack} />
-              <span className={styles.switchThumb} />
-            </span>
-            Read-only
-          </label>
-        </div>
-        <div className={styles.controlsRight}>
-          <span className={styles.statusPill}>
-            <span
-              className={styles.statusDot}
-              data-off={!collabEnabled ? "true" : undefined}
-            />
-            {collabEnabled ? "Collab on" : "Collab off"}
-          </span>
-          <span className={styles.statusPill}>
-            {defaultExtensionModules.length} module
-            {defaultExtensionModules.length === 1 ? "" : "s"}
-          </span>
-        </div>
-      </div>
       <div className={styles.body}>
         <div className={styles.editorColumn}>
           <Editor
@@ -233,7 +175,7 @@ export function EditorShell() {
             onUpdateJSON={handleUpdateJSON}
           />
         </div>
-        <VersionsPanel
+        <RightPanel
           editor={editor}
           diffSelection={diffSelection}
           onChangeDiffSelection={setDiffSelection}

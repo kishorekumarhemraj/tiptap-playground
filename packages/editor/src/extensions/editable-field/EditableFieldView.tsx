@@ -9,16 +9,15 @@ import {
 import type { EditableFieldExtensionStorage } from "./EditableField";
 import styles from "./EditableFieldView.module.css";
 
-function EditIcon() {
+function EditIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path
-        d="M2 14h2.8L13 5.8 10.2 3 2 11.2V14z"
+        d="M11.5 2.5l2 2L6 12H4v-2L11.5 2.5z"
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinejoin="round"
       />
-      <path d="M9 4l3 3" stroke="currentColor" strokeWidth="1.4" />
     </svg>
   );
 }
@@ -50,10 +49,11 @@ export function EditableFieldView({
       data-placeholder={placeholder}
     >
       {isTemplate ? (
+        /* ── Template bar: "Editable Field" chip + instruction input ── */
         <div className={styles.templateBar} contentEditable={false}>
           <span className={styles.chipInline}>
-            <EditIcon />
-            Editable
+            <EditIcon size={11} />
+            Editable Field
           </span>
           <input
             className={styles.instructionInput}
@@ -73,10 +73,18 @@ export function EditableFieldView({
         </div>
       ) : (
         <>
+          {/* Floating "Editable Field" label at top-left (visible always) */}
           <span className={styles.chip} contentEditable={false}>
-            <EditIcon />
-            Editable
+            Editable Field
           </span>
+
+          {/* Pen + "Edit" affordance at top-right — fades in on hover, out on focus */}
+          <span className={styles.editHint} contentEditable={false} aria-hidden="true">
+            <EditIcon size={10} />
+            Edit
+          </span>
+
+          {/* Instruction banner */}
           {instruction && (
             <span className={styles.instruction} contentEditable={false}>
               {instruction}
@@ -84,6 +92,7 @@ export function EditableFieldView({
           )}
         </>
       )}
+
       <NodeViewContent
         className={styles.content}
         data-placeholder={placeholder}

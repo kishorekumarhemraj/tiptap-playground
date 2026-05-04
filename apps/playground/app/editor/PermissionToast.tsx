@@ -22,6 +22,27 @@ const FRIENDLY_REASONS: Record<string, string> = {
 
 let nextId = 1;
 
+function LockIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+      style={{ flexShrink: 0 }}
+    >
+      <rect x="4" y="8" width="8" height="6" rx="1" stroke="white" strokeWidth="1.4" />
+      <path
+        d="M5.5 8V6a2.5 2.5 0 0 1 5 0v2"
+        stroke="white"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function PermissionToast({ events }: PermissionToastProps) {
   const [messages, setMessages] = useState<ToastMessage[]>([]);
 
@@ -48,7 +69,7 @@ export function PermissionToast({ events }: PermissionToastProps) {
     <div className={styles.container} role="status" aria-live="polite">
       {messages.map((m) => (
         <div key={m.id} className={styles.toast}>
-          <span className={styles.icon} aria-hidden="true">🔒</span>
+          <LockIcon />
           {m.reason}
         </div>
       ))}

@@ -1,159 +1,23 @@
 .shell {
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   position: relative;
-}
-
-/* ── Controls bar ── */
-.controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-subtle);
-  font-size: 13px;
-  flex-wrap: wrap;
-}
-
-.controlsLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* Segmented mode control */
-.segmented {
-  display: inline-flex;
-  padding: 2px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-}
-
-.segmentedButton {
-  appearance: none;
-  border: none;
-  padding: 4px 12px;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--fg-muted);
-  background: transparent;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.segmentedButton:hover {
-  color: var(--fg);
-}
-
-.segmentedButton[data-active="true"] {
-  background: var(--accent);
-  color: white;
-}
-
-.controlsRight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Toggle switch */
-.toggleLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-  color: var(--fg-muted);
-  font-size: 13px;
-}
-
-.toggleLabel:hover {
-  color: var(--fg);
-}
-
-.switchWrapper {
-  position: relative;
-  width: 32px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.switchWrapper input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  position: absolute;
-}
-
-.switchTrack {
-  position: absolute;
-  inset: 0;
-  background: var(--border-strong);
-  border-radius: var(--radius-full);
-  transition: background var(--transition-fast);
-}
-
-.switchWrapper input:checked ~ .switchTrack {
-  background: var(--accent);
-}
-
-.switchThumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  background: white;
-  border-radius: 50%;
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-fast);
-  pointer-events: none;
-}
-
-.switchWrapper input:checked ~ .switchThumb {
-  transform: translateX(14px);
-}
-
-/* Status pill */
-.statusPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--fg-muted);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  padding: 3px 10px;
-}
-
-.statusDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-  flex-shrink: 0;
-}
-
-.statusDot[data-off="true"] {
-  background: var(--border-strong);
 }
 
 /* ── Body ── */
 .body {
+  flex: 1;
   display: flex;
-  align-items: stretch;
-  min-height: 540px;
+  overflow: hidden;
 }
 
 .editorColumn {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 /* ── Diff overlay ── */
@@ -188,7 +52,7 @@
   gap: 10px;
   padding: 12px 16px;
   background: var(--bg, #fff);
-  border-top: 1px solid var(--border, #e8e8e5);
+  border-top: 1px solid var(--border, #e4e4e7);
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }
@@ -197,7 +61,7 @@
   font: inherit;
   font-size: 13px;
   padding: 7px 16px;
-  border: 1px solid var(--border, #e8e8e5);
+  border: 1px solid var(--border, #e4e4e7);
   border-radius: var(--radius-md, 6px);
   background: var(--bg, #fff);
   color: var(--fg-muted, #6b6b68);
