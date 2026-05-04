@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
+import type { JSONContent } from "@tiptap/core";
 import type { VersionSnapshot } from "@tiptap-playground/editor";
 import {
   VersionsPanel,
@@ -65,6 +66,7 @@ const MOCK_COMMENTS: Comment[] = [
 /* ── Props ── */
 interface RightPanelProps {
   editor: VersionsPanelHandle | null;
+  docJson?: JSONContent | null;
   diffSelection: { left: string | null; right: string | null };
   onChangeDiffSelection: (s: {
     left: string | null;
@@ -76,12 +78,13 @@ interface RightPanelProps {
 
 export function RightPanel({
   editor,
+  docJson,
   diffSelection,
   onChangeDiffSelection,
   onCompare,
   onPreviewRestore,
 }: RightPanelProps) {
-  const [activeTab, setActiveTab] = useState<"versions" | "comments">(
+  const [activeTab, setActiveTab] = useState<"versions" | "comments" | "json">(
     "versions",
   );
   const unresolvedCount = MOCK_COMMENTS.filter((c) => !c.resolved).length;
@@ -90,7 +93,7 @@ export function RightPanel({
     <aside className={styles.panel}>
       {/* Tab bar */}
       <div className={styles.tabs}>
-        {(["versions", "comments"] as const).map((tab) => {
+        {(["versions", "comments", "json"] as const).map((tab) => {
           const active = activeTab === tab;
           return (
             <button
@@ -99,8 +102,10 @@ export function RightPanel({
               className={`${styles.tab} ${active ? styles.tabActive : ""}`}
               onClick={() => setActiveTab(tab)}
             >
-              {tab === "versions" ? <ClockIcon /> : <CommentIcon />}
-              {tab === "versions" ? "Versions" : "Comments"}
+              {tab === "versions" && <ClockIcon />}
+              {tab === "comments" && <CommentIcon />}
+              {tab === "json" && <BracesIcon />}
+              {tab === "versions" ? "Versions" : tab === "comments" ? "Comments" : "JSON"}
               {tab === "comments" && unresolvedCount > 0 && (
                 <span className={styles.badge}>{unresolvedCount}</span>
               )}
@@ -145,6 +150,35 @@ export function RightPanel({
           embedded
         />
       </div>
+
+      {/* JSON tab */}
+      {activeTab === "json" && (
+        <div className={styles.jsonContent}>
+          <div className={styles.jsonHeader}>
+            <span className={styles.jsonLabel}>Document JSON</span>
+            <button
+              type="button"
+              className={styles.jsonCopyBtn}
+              onClick={() => {
+                if (docJson) {
+                  navigator.clipboard.writeText(JSON.stringify(docJson, null, 2));
+                }
+              }}
+              disabled={!docJson}
+              title="Copy to clipboard"
+            >
+              <CopyIcon />
+              Copy
+            </button>
+          </div>
+          <pre className={styles.jsonPre}>
+            {docJson
+              ? colorizeJson(JSON.stringify(docJson, null, 2))
+              : <span className={styles.jsonEmpty}>Loading…</span>
+            }
+          </pre>
+        </div>
+      )}
 
       {/* Comments tab */}
       {activeTab === "comments" && (
@@ -264,6 +298,29 @@ function CommentItem({ comment }: { comment: Comment }) {
       )}
     </div>
   );
+}
+
+/* ── JSON syntax colorizer ── */
+function colorizeJson(json: string): React.ReactNode {
+  const tokens = json.split(/("(?:\\.|[^"\\])*"(?:\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/);
+  return tokens.map((token, i) => {
+    if (/^".*":$/.test(token.trim())) {
+      return <span key={i} className={styles.jsonKey}>{token}</span>;
+    }
+    if (/^"/.test(token)) {
+      return <span key={i} className={styles.jsonString}>{token}</span>;
+    }
+    if (/^(true|false)$/.test(token)) {
+      return <span key={i} className={styles.jsonBool}>{token}</span>;
+    }
+    if (token === "null") {
+      return <span key={i} className={styles.jsonNull}>{token}</span>;
+    }
+    if (/^-?\d/.test(token)) {
+      return <span key={i} className={styles.jsonNumber}>{token}</span>;
+    }
+    return token;
+  });
 }
 
 /* ── Inline SVG icons ── */
@@ -411,6 +468,61 @@ function ResolveIcon() {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function BracesIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M5 2.5C3.5 2.5 3 3 3 4.5v2C3 7.5 2 8 2 8s1 .5 1 1.5v2C3 13 3.5 13.5 5 13.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M11 2.5c1.5 0 2 .5 2 2v2C13 7.5 14 8 14 8s-1 .5-1 1.5v2c0 1.5-.5 2-2 2"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="5"
+        y="5"
+        width="8"
+        height="9"
+        rx="1"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M3 11V3a1 1 0 0 1 1-1h8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
       />
     </svg>
   );

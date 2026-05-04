@@ -331,3 +331,93 @@
 .resolveBtn {
   color: var(--success, #059669);
 }
+
+/* ── JSON tab ── */
+.jsonContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.jsonHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border, #e4e4e7);
+  flex-shrink: 0;
+}
+
+.jsonLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-3, #a1a1aa);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.jsonCopyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent, #2563eb);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+  font-family: var(--font-sans);
+}
+
+.jsonCopyBtn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.jsonCopyBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.jsonPre {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 12px;
+  font-family: var(--font-mono, ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--fg-2, #52525b);
+  white-space: pre;
+  background: var(--bg-subtle, #f8f8f7);
+  tab-size: 2;
+}
+
+.jsonEmpty {
+  color: var(--fg-3, #a1a1aa);
+  font-style: italic;
+}
+
+/* JSON syntax tokens */
+.jsonKey {
+  color: var(--accent, #2563eb);
+  font-weight: 500;
+}
+
+.jsonString {
+  color: #16a34a;
+}
+
+.jsonNumber {
+  color: #d97706;
+}
+
+.jsonBool {
+  color: #7c3aed;
+}
+
+.jsonNull {
+  color: #dc2626;
+  font-style: italic;
+}
