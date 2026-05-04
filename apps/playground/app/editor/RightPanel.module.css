@@ -390,7 +390,6 @@
   line-height: 1.6;
   color: var(--fg-2, #52525b);
   white-space: pre;
-  background: var(--bg-subtle, #f8f8f7);
   tab-size: 2;
 }
 
