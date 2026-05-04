@@ -13,9 +13,8 @@ interface Props {
 }
 
 export function PagesControls({ editor }: Props) {
-  const pagesStorage = editor?.storage.pages as
-    | { pageFormat: PageFormat; zoom: number }
-    | undefined;
+  const pagesStorage = (editor?.storage as Record<string, unknown> | undefined)
+    ?.pages as { pageFormat: PageFormat; zoom: number } | undefined;
 
   const [pageFormat, setPageFormat] = useState<PageFormat>(
     pagesStorage?.pageFormat ?? "A4",
