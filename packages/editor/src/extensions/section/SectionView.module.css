@@ -1,83 +1,81 @@
 /* ─── Wrapper ─────────────────────────────────────────────────────────────── */
 .wrapper {
   display: block;
-  margin: 12px 0;
+  margin: 0 0 24px;
   position: relative;
-  border-radius: 10px;
+  border-radius: var(--r-lg, 10px);
+  /* Padding is constant in both modes — no layout shift on hover */
+  transition: box-shadow var(--transition-normal, 160ms ease);
 }
 
 /* ─── Template mode ────────────────────────────────────────────────────────── */
 .templateMode {
-  border: 1.5px solid var(--template-border, #f59e0b33);
-  border-radius: 10px;
-  background: var(--bg, #fff);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  padding: 14px 16px;
+  border-radius: var(--r-lg, 10px);
+  background: transparent;
+  /* Default: subtle blue ring */
+  box-shadow:
+    0 0 0 1.5px rgba(37, 99, 235, 0.22),
+    inset 0 0 0 9999px rgba(37, 99, 235, 0.02);
 }
 
-/* Amber left accent stripe */
-.templateMode::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  border-radius: 10px 0 0 10px;
-  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
-  pointer-events: none;
+.templateMode:hover,
+.templateMode:focus-within {
+  box-shadow:
+    0 0 0 2px var(--blue, #2563eb),
+    inset 0 0 0 9999px rgba(37, 99, 235, 0.04);
 }
 
-/* ─── Header ─────────────────────────────────────────────────────────────── */
+/* ─── Header (template mode) ─────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px 8px 14px;
-  background: linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(245,158,11,0.02) 100%);
-  border-bottom: 1px solid rgba(245, 158, 11, 0.15);
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+  margin-bottom: 8px;
   user-select: none;
+  position: relative;
 }
 
-/* ─── Grip handle ────────────────────────────────────────────────────────── */
+/* ── Left: grip ── */
 .headerLeft {
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  /* Grip is always in DOM; opacity toggled by .wrapper:hover */
 }
 
 .gripIcon {
   width: 14px;
   height: 14px;
-  color: var(--fg-faint, #c0beb9);
+  color: var(--fg-3, #a1a1aa);
   cursor: grab;
   flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--transition-fast, 100ms ease);
+}
+
+.templateMode:hover .gripIcon {
+  opacity: 1;
 }
 
 .gripIcon:active {
   cursor: grabbing;
 }
 
-/* ─── Title + instruction area ───────────────────────────────────────────── */
+/* ── Title + instruction area ── */
 .titleArea {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 6px;
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.titleRow {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.chipIcon {
+/* Section icon (small SVG) */
+.sectionIcon {
   width: 13px;
   height: 13px;
-  color: #d97706;
+  color: var(--blue, #2563eb);
   flex-shrink: 0;
 }
 
@@ -85,9 +83,11 @@
   flex: 1;
   border: none;
   background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--fg, #1a1a1a);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--blue, #2563eb);
   padding: 0;
   outline: none;
   font-family: inherit;
@@ -95,24 +95,89 @@
 }
 
 .titleInput::placeholder {
-  color: var(--fg-faint, #c0beb9);
-  font-weight: 400;
-  font-style: italic;
+  color: rgba(37, 99, 235, 0.4);
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
-/* ─── Instruction row ────────────────────────────────────────────────────── */
+/* Mutable badge */
+.mutableBadge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--teal, #0d9488);
+  background: var(--teal-chip, rgba(13, 148, 136, 0.13));
+  border-radius: var(--r-full, 9999px);
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Controls (always in DOM, opacity-toggled) ── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast, 100ms ease);
+  flex-shrink: 0;
+}
+
+.templateMode:hover .controls,
+.templateMode:focus-within .controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.controlBtn {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border, #e4e4e7);
+  border-radius: var(--r-sm, 4px);
+  background: var(--bg-card, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  color: var(--fg-2, #52525b);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.controlBtn:hover {
+  background: var(--bg-hover, #efeeec);
+  border-color: var(--border-2, #d4d4d8);
+}
+
+.controlBtnDanger {
+  color: var(--red, #dc2626);
+}
+
+.controlBtnDanger:hover {
+  background: var(--red-soft, rgba(220, 38, 38, 0.08));
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+/* ─── Instruction row (template mode) ───────────────────────────────────── */
 .instructionRow {
   display: flex;
   align-items: center;
-  gap: 4px;
-  min-height: 16px;
+  gap: 5px;
+  margin-bottom: 8px;
 }
 
-.instructionIcon {
-  font-size: 10px;
+.instructionPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--blue-hover, #1d4ed8);
+  font-weight: 500;
+  background: var(--blue-chip, rgba(37, 99, 235, 0.12));
+  border-radius: var(--r-full, 9999px);
+  padding: 2px 8px;
+  white-space: nowrap;
   flex-shrink: 0;
-  opacity: 0.65;
-  line-height: 1;
 }
 
 .instructionInput {
@@ -121,145 +186,97 @@
   background: transparent;
   font-size: 11px;
   font-style: italic;
-  color: var(--fg-muted, #6b6b68);
+  color: var(--fg-2, #52525b);
   padding: 0;
   outline: none;
   font-family: inherit;
   min-width: 0;
-  line-height: 1.4;
 }
 
 .instructionInput::placeholder {
-  color: var(--fg-faint, #c0beb9);
+  color: var(--fg-3, #a1a1aa);
   font-style: italic;
-}
-
-/* ─── Mutability toggle ──────────────────────────────────────────────────── */
-.mutabilityToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px 3px 6px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  border: 1px solid;
-  transition:
-    background var(--transition-fast, 100ms ease),
-    color var(--transition-fast, 100ms ease),
-    border-color var(--transition-fast, 100ms ease);
-  flex-shrink: 0;
-  white-space: nowrap;
-  letter-spacing: 0.01em;
-}
-
-.fixed {
-  background: var(--bg-subtle, #f7f7f5);
-  border-color: var(--border, #e8e8e5);
-  color: var(--fg-muted, #6b6b68);
-}
-
-.fixed:hover {
-  background: var(--bg-muted, #f0f0ee);
-  border-color: var(--border-strong, #d0cec8);
-  color: var(--fg, #1a1a1a);
-}
-
-.mutable {
-  background: rgba(5, 150, 105, 0.08);
-  border-color: rgba(5, 150, 105, 0.35);
-  color: #059669;
-}
-
-.mutable:hover {
-  background: rgba(5, 150, 105, 0.14);
-  border-color: #059669;
 }
 
 /* ─── Content area ───────────────────────────────────────────────────────── */
 .content {
-  padding: 10px 14px 10px 18px;
+  display: block;
 }
 
 .content > *:first-child { margin-top: 0; }
 .content > *:last-child  { margin-bottom: 0; }
 
+.templateMode .content {
+  padding: 0;
+}
+
 /* ─── Document mode ────────────────────────────────────────────────────────── */
 .documentMode {
-  border: none;
-  border-radius: 0;
+  padding: 10px 14px;
+  border-radius: var(--r-md, 6px);
   background: transparent;
+  box-shadow: none;
 }
 
-/* Subtle left bar that appears on hover */
-.documentMode::before {
-  content: '';
-  position: absolute;
-  left: -10px;
-  top: 4px;
-  bottom: 4px;
-  width: 2px;
-  border-radius: 2px;
-  background: transparent;
-  transition: background 150ms ease;
-  pointer-events: none;
-}
-
-.documentMode:hover::before {
-  background: var(--accent, #2563eb);
+.documentMode:hover {
+  box-shadow: 0 0 0 1px var(--border-2, #d4d4d8);
 }
 
 .documentMode .content {
   padding: 4px 0;
 }
 
-/* ─── Hover chip (document mode) ─────────────────────────────────────────── */
-.hoverChip {
+/* ─── Document mode: floating title label on hover ───────────────────────── */
+/*
+ * Uses opacity transition only — never a layout-shifting property.
+ * The label sits at position absolute top:-9px so it doesn't shift content.
+ */
+.docLabel {
   position: absolute;
-  top: -12px;
-  left: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px 2px 6px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: 999px;
-  background: var(--bg, #fff);
-  color: var(--fg-muted, #6b6b68);
-  border: 1px solid var(--border, #e8e8e5);
-  user-select: none;
+  top: -9px;
+  left: 12px;
+  opacity: 0;
+  transition: opacity var(--transition-normal, 160ms ease);
   pointer-events: none;
-  z-index: 10;
-  animation: fadeIn 100ms ease;
+  z-index: 2;
 }
 
-.hoverChip .chipIcon {
-  width: 10px;
-  height: 10px;
-  color: var(--fg-muted, #6b6b68);
+.documentMode:hover .docLabel {
+  opacity: 1;
 }
 
-.hoverChipText {
-  /* inherits from hoverChip */
-}
-
-.hoverOpenBadge {
-  padding: 1px 5px;
-  font-size: 9px;
+.docLabelText {
+  font-size: 10px;
   font-weight: 700;
-  border-radius: 3px;
-  background: var(--accent-soft, rgba(37, 99, 235, 0.1));
-  color: var(--accent, #2563eb);
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: rgba(37, 99, 235, 0.6);
+  background: var(--bg-card, #fff);
+  padding: 0 5px;
+  line-height: 1;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(2px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Lock icon (top-right) */
+.docLock {
+  position: absolute;
+  top: -9px;
+  right: 12px;
+  opacity: 0;
+  transition: opacity var(--transition-normal, 160ms ease);
+  pointer-events: none;
+  z-index: 2;
+  background: var(--bg-card, #fff);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  color: rgba(37, 99, 235, 0.45);
+}
+
+.documentMode:hover .docLock {
+  opacity: 1;
+}
+
+/* ─── Hover chip (document mode, legacy — kept for compat) ──────────────── */
+.hoverChip {
+  display: none; /* replaced by docLabel */
 }
