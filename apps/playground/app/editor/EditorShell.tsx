@@ -79,6 +79,7 @@ function loadInitialContent(): JSONContent | string {
 export function EditorShell() {
   const [mode, setMode] = useState<EditorMode>("template");
   const [editor, setEditor] = useState<VersionsPanelHandle | null>(null);
+  const [docJson, setDocJson] = useState<JSONContent | null>(null);
   const [diffSelection, setDiffSelection] = useState<{
     left: string | null;
     right: string | null;
@@ -99,6 +100,7 @@ export function EditorShell() {
   const latestJsonRef = useRef<JSONContent | string>(loadInitialContent());
   const handleUpdateJSON = useCallback((json: JSONContent) => {
     latestJsonRef.current = json;
+    setDocJson(json);
     // Auto-save every edit so instructions survive a page refresh.
     try {
       window.localStorage.setItem(CONTENT_KEY, JSON.stringify(json));
@@ -177,6 +179,7 @@ export function EditorShell() {
         </div>
         <RightPanel
           editor={editor}
+          docJson={docJson}
           diffSelection={diffSelection}
           onChangeDiffSelection={setDiffSelection}
           onCompare={(left, right) =>
