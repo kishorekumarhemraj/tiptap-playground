@@ -241,8 +241,16 @@
   z-index: 2;
 }
 
-.documentMode:hover .docLabel {
+/* Show label only for the directly-hovered section. CSS :hover propagates
+   to ancestors, so without `> .docLabel` the parent's :hover rule would
+   match the child's label too. And with nested sections hovered, the
+   :has() override hides the ancestor label so only the innermost shows. */
+.documentMode:hover > .docLabel {
   opacity: 1;
+}
+
+.documentMode:has(.documentMode:hover) > .docLabel {
+  opacity: 0;
 }
 
 .docLabelText {
@@ -272,8 +280,12 @@
   color: rgba(37, 99, 235, 0.45);
 }
 
-.documentMode:hover .docLock {
+.documentMode:hover > .docLock {
   opacity: 1;
+}
+
+.documentMode:has(.documentMode:hover) > .docLock {
+  opacity: 0;
 }
 
 /* ─── Hover chip (document mode, legacy — kept for compat) ──────────────── */
