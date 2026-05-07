@@ -93,6 +93,14 @@ export function SectionView({
   const mutableContent = node.attrs.mutableContent === true;
   const sectionId      = (node.attrs.id as string | null) ?? null;
 
+  // Audit metadata (stamped by the block-audit extension). May be null
+  // for sections persisted before the extension was added; fall back to
+  // hiding the chip rather than rendering "Anonymous · just now".
+  const createdByName  = (node.attrs.createdByName as string | null) ?? null;
+  const createdAt      = (node.attrs.createdAt as number | null) ?? null;
+  const modifiedByName = (node.attrs.modifiedByName as string | null) ?? null;
+  const modifiedAt     = (node.attrs.modifiedAt as number | null) ?? null;
+
   const [draftTitle,       setDraftTitle]       = useState<string>(title ?? "");
   const [draftInstruction, setDraftInstruction] = useState<string>(instruction ?? "");
 
@@ -159,6 +167,14 @@ export function SectionView({
           <div className={styles.docLabel} contentEditable={false}>
             <span className={styles.docLabelText}>{title ?? "Section"}</span>
           </div>
+          {(modifiedByName || createdByName) && (
+            <AuditChip
+              createdByName={createdByName}
+              createdAt={createdAt}
+              modifiedByName={modifiedByName}
+              modifiedAt={modifiedAt}
+            />
+          )}
           {!mutableContent && (
             <div className={styles.docLock} contentEditable={false}>
               <LockIcon size={12} />
@@ -229,4 +245,66 @@ function InstructionBanner({ text }: { text: string }) {
       <span>{text}</span>
     </div>
   );
+}
+
+/* ── Audit chip (document mode) ──────────────────────────────────────────── */
+
+interface AuditChipProps {
+  createdByName: string | null;
+  createdAt: number | null;
+  modifiedByName: string | null;
+  modifiedAt: number | null;
+}
+
+function AuditChip({
+  createdByName,
+  createdAt,
+  modifiedByName,
+  modifiedAt,
+}: AuditChipProps) {
+  // Tooltip is the full provenance; the visible chip is a short summary.
+  const isModified =
+    modifiedAt && createdAt && modifiedAt > createdAt + 1000; // 1s tolerance
+  const summary = isModified
+    ? `Edited by ${modifiedByName ?? "—"} · ${formatRelativeTime(modifiedAt!)}`
+    : createdAt
+      ? `Created by ${createdByName ?? "—"} · ${formatRelativeTime(createdAt)}`
+      : null;
+  if (!summary) return null;
+
+  const tooltipLines: string[] = [];
+  if (createdByName && createdAt) {
+    tooltipLines.push(`Created by ${createdByName} on ${formatAbsoluteTime(createdAt)}`);
+  }
+  if (isModified && modifiedByName && modifiedAt) {
+    tooltipLines.push(`Last edited by ${modifiedByName} on ${formatAbsoluteTime(modifiedAt)}`);
+  }
+
+  return (
+    <div
+      className={styles.auditChip}
+      contentEditable={false}
+      title={tooltipLines.join("\n")}
+      aria-label={tooltipLines.join(". ")}
+    >
+      {summary}
+    </div>
+  );
+}
+
+function formatRelativeTime(ms: number): string {
+  const diffSec = Math.max(1, Math.floor((Date.now() - ms) / 1000));
+  if (diffSec < 60)  return "just now";
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+  if (diffSec < 604800) return `${Math.floor(diffSec / 86400)}d ago`;
+  return new Date(ms).toLocaleDateString();
+}
+
+function formatAbsoluteTime(ms: number): string {
+  try {
+    return new Date(ms).toLocaleString();
+  } catch {
+    return String(ms);
+  }
 }

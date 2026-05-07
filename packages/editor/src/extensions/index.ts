@@ -5,6 +5,7 @@ import { editableFieldModule } from "./editable-field";
 import { fieldModule } from "./field";
 import { templateGuardModule } from "./template-guard";
 import { blockInstructionModule } from "./block-instruction";
+import { blockAuditModule } from "./block-audit";
 import { slashCommandModule } from "./slash-command";
 import { collaborationModule } from "./collaboration";
 import { trackChangesModule } from "./track-changes";
@@ -30,6 +31,7 @@ export const defaultExtensionModules: EditorExtensionModule[] = [
   fieldModule,
   templateGuardModule,
   blockInstructionModule,
+  blockAuditModule,
   slashCommandModule,
   collaborationModule,
   trackChangesModule,
@@ -46,6 +48,7 @@ export {
   fieldModule,
   templateGuardModule,
   blockInstructionModule,
+  blockAuditModule,
   slashCommandModule,
   collaborationModule,
   trackChangesModule,

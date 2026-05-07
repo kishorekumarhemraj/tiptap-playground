@@ -20,6 +20,14 @@ export interface EditorHandle {
     nameOrAttrs: string | Record<string, unknown>,
     attrs?: Record<string, unknown>,
   ) => boolean;
+  /**
+   * One-shot bootstrap: if the document is currently empty, replace it
+   * with the supplied content. Intended for hosts using the
+   * collaboration extension, where the Y.Doc supersedes the
+   * `initialContent` prop on first run. No-op when content already
+   * exists, so re-calling on every render is safe.
+   */
+  bootstrapIfEmpty: (content: string | JSONContent) => boolean;
 }
 
 /**
@@ -46,6 +54,19 @@ export function toEditorHandle(editor: TiptapEditor): EditorHandle {
       typeof nameOrAttrs === "string"
         ? editor.isActive(nameOrAttrs, attrs)
         : editor.isActive(nameOrAttrs),
+    bootstrapIfEmpty: (content) => {
+      if (editor.isDestroyed) return false;
+      if (!editor.isEmpty && editor.state.doc.content.size > 2) return false;
+      // setContent fights with the y-prosemirror sync plugin in some
+      // mount sequences (returns true but the replace silently rolls
+      // back). insertContentAt at the doc end replaces nothing, just
+      // appends, which is a path the collab plugin reliably propagates.
+      const ok = editor
+        .chain()
+        .insertContentAt(editor.state.doc.content.size, content)
+        .run();
+      return ok && !editor.isEmpty;
+    },
   };
 }
 

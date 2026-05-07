@@ -7,6 +7,93 @@ import type {
   CollaborationProviderFactory,
 } from "../../drivers/collaboration-provider";
 
+/* ─── Remote-caret styles ──────────────────────────────────────────────────
+ * Injected once per page. The caret is a thin coloured bar; a floating
+ * pill above it shows the user's name (Google-Docs / Word style). The
+ * label fades out a few seconds after the remote user stops moving — we
+ * implement that by re-applying a fresh "active" state every time the
+ * caret element is re-rendered (which TipTap does on every awareness
+ * change, i.e. every keystroke from the remote user).
+ */
+const CARET_STYLE_ID = "tpe-collab-caret-style";
+const CARET_STYLE_RULES = `
+.tpe-collab-caret {
+  position: relative;
+  border-left: 2px solid var(--tpe-caret-color, #2563eb);
+  margin-left: -1px;
+  margin-right: -1px;
+  height: 1.1em;
+  word-break: normal;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+.tpe-collab-caret-label {
+  position: absolute;
+  left: -2px;
+  top: -1.45em;
+  white-space: nowrap;
+  background: var(--tpe-caret-color, #2563eb);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 4px 4px 4px 0;
+  user-select: none;
+  pointer-events: none;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  letter-spacing: 0.01em;
+  /* Fade out after ~2.5s, restart whenever the caret element is recreated
+     (TipTap rebuilds the decoration on every awareness change). */
+  animation: tpe-caret-label-fade 3.5s ease-out forwards;
+}
+@keyframes tpe-caret-label-fade {
+  0%, 70%   { opacity: 1; transform: translateY(0); }
+  100%      { opacity: 0; transform: translateY(-2px); }
+}
+.tpe-collab-caret:hover .tpe-collab-caret-label,
+.tpe-collab-caret:focus .tpe-collab-caret-label {
+  animation: none;
+  opacity: 1;
+}
+.tpe-collab-selection {
+  background-color: var(--tpe-caret-color, #2563eb);
+  opacity: 0.18;
+}
+`;
+
+function attachCaretStyles() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(CARET_STYLE_ID)) return;
+  const el = document.createElement("style");
+  el.id = CARET_STYLE_ID;
+  el.textContent = CARET_STYLE_RULES;
+  document.head.appendChild(el);
+}
+
+function renderRemoteCaret(user: Record<string, unknown>): HTMLElement {
+  const color = (user.color as string | undefined) ?? "#2563eb";
+  const name = (user.name as string | undefined) ?? "Anonymous";
+  const caret = document.createElement("span");
+  caret.className = "tpe-collab-caret";
+  caret.style.setProperty("--tpe-caret-color", color);
+  const label = document.createElement("span");
+  label.className = "tpe-collab-caret-label";
+  label.textContent = name;
+  caret.appendChild(label);
+  return caret;
+}
+
+function renderRemoteSelection(user: Record<string, unknown>) {
+  const color = (user.color as string | undefined) ?? "#2563eb";
+  return {
+    nodeName: "span",
+    class: "tpe-collab-selection",
+    style: `--tpe-caret-color: ${color};`,
+    "data-user": (user.name as string | undefined) ?? "Anonymous",
+  };
+}
+
 // Session cache keyed by documentId. Providers are created once per
 // document and reused regardless of factory reference identity. This
 // prevents context rebuilds (e.g. mode/readOnly toggle) from tearing
@@ -54,6 +141,7 @@ export const collaborationModule: EditorExtensionModule = {
     ];
 
     if (provider.awarenessProvider) {
+      attachCaretStyles();
       exts.push(
         CollaborationCaret.configure({
           provider: provider.awarenessProvider,
@@ -62,6 +150,8 @@ export const collaborationModule: EditorExtensionModule = {
             color: ctx.user.color,
             id: ctx.user.id,
           },
+          render: renderRemoteCaret,
+          selectionRender: renderRemoteSelection,
         }),
       );
     }
