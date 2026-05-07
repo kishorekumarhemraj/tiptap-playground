@@ -17,6 +17,33 @@ declare module "@tiptap/core" {
 
 const instructionKey = new PluginKey("blockInstruction");
 
+// UI preference (not document data) — the toggle state belongs to the
+// viewer's session, like a dark-mode toggle. Persisting it next to the
+// command keeps the wiring trivial; document persistence still flows
+// through the host's drivers.
+const STORAGE_KEY = "tpe:block-instruction:show";
+
+function loadShowFromStorage(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw === "false") return false;
+    if (raw === "true") return true;
+  } catch {
+    /* private mode / quota — fall through */
+  }
+  return true;
+}
+
+function saveShowToStorage(show: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, String(show));
+  } catch {
+    /* non-fatal */
+  }
+}
+
 const STYLE_TAG_ID = "tpe-block-instruction-style";
 const STYLE_RULES = `
 .tpe-instruction-widget {
@@ -126,8 +153,15 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
 
   addStorage() {
     return {
-      showInstructions: true,
+      showInstructions: loadShowFromStorage(),
     };
+  },
+
+  onCreate() {
+    // Apply the persisted preference to the editor DOM as soon as it
+    // mounts so the user doesn't see a flash of the wrong state.
+    const show = this.editor.storage.blockInstruction.showInstructions;
+    this.editor.view.dom.classList.toggle("tpe-instructions-hidden", !show);
   },
 
   addCommands() {
@@ -140,6 +174,7 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
           // CSS class toggles all instruction surfaces (widget decorations +
           // NodeView banners) without requiring React NodeView re-renders.
           editor.view.dom.classList.toggle("tpe-instructions-hidden", !show);
+          saveShowToStorage(show);
           // Transaction dispatch rebuilds the decoration set for widget hints.
           editor.view.dispatch(editor.state.tr.setMeta(instructionKey, {}));
           return true;

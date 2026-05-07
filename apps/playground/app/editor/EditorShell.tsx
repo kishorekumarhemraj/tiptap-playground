@@ -28,6 +28,18 @@ const DOCUMENT_ID = "playground-doc";
 // `section` / `editableField` / `field`. Old persisted JSON would
 // fail to parse against the new schema.
 const CONTENT_KEY = `tiptap-editor:content:v2:${DOCUMENT_ID}`;
+const MODE_KEY = `tiptap-editor:mode:${DOCUMENT_ID}`;
+
+function loadInitialMode(): EditorMode {
+  if (typeof window === "undefined") return "template";
+  try {
+    const raw = window.localStorage.getItem(MODE_KEY);
+    if (raw === "template" || raw === "document") return raw;
+  } catch {
+    /* private mode / quota — fall through */
+  }
+  return "template";
+}
 
 const DEFAULT_CONTENT = `
 <h1>Quarterly Compliance Review</h1>
@@ -77,7 +89,15 @@ function loadInitialContent(): JSONContent | string {
 }
 
 export function EditorShell() {
-  const [mode, setMode] = useState<EditorMode>("template");
+  const [mode, setModeState] = useState<EditorMode>(loadInitialMode);
+  const setMode = useCallback((next: EditorMode) => {
+    setModeState(next);
+    try {
+      window.localStorage.setItem(MODE_KEY, next);
+    } catch {
+      /* non-fatal */
+    }
+  }, []);
   const [editor, setEditor] = useState<VersionsPanelHandle | null>(null);
   const [docJson, setDocJson] = useState<JSONContent | null>(null);
   const [diffSelection, setDiffSelection] = useState<{
