@@ -35,6 +35,24 @@ const STYLE_RULES = `
   font-style: normal;
   font-weight: 500;
 }
+
+/* Hide ALL instruction surfaces (widget decorations + NodeView banners)
+   when the editor root carries this class. NodeView banners can't
+   re-render on storage mutations, so CSS is the reliable toggle path. */
+.tpe-instructions-hidden .tpe-instruction-widget,
+.tpe-instructions-hidden .tpe-instruction-banner,
+.tpe-instructions-hidden .tpe-field-instruction {
+  display: none !important;
+}
+
+/* Compact document-mode sections when instructions are hidden.
+   Without the instruction banners the fixed padding/margin leave large
+   blank gaps — especially noticeable with nested sections. */
+.tpe-instructions-hidden .tpe-section {
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  margin-bottom: 6px !important;
+}
 `;
 
 let styleRefCount = 0;
@@ -117,9 +135,12 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
       toggleInstructions:
         () =>
         ({ editor }) => {
-          editor.storage.blockInstruction.showInstructions =
-            !editor.storage.blockInstruction.showInstructions;
-          // Dispatch empty transaction to force UI update
+          const show = !editor.storage.blockInstruction.showInstructions;
+          editor.storage.blockInstruction.showInstructions = show;
+          // CSS class toggles all instruction surfaces (widget decorations +
+          // NodeView banners) without requiring React NodeView re-renders.
+          editor.view.dom.classList.toggle("tpe-instructions-hidden", !show);
+          // Transaction dispatch rebuilds the decoration set for widget hints.
           editor.view.dispatch(editor.state.tr.setMeta(instructionKey, {}));
           return true;
         },

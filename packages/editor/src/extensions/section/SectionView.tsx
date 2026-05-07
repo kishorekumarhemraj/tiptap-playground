@@ -99,7 +99,7 @@ export function SectionView({
   return (
     <NodeViewWrapper
       as="section"
-      className={`${styles.wrapper} ${isTemplate ? styles.templateMode : styles.documentMode}`}
+      className={`${styles.wrapper} ${isTemplate ? styles.templateMode : `tpe-section ${styles.documentMode}`}`}
       data-section-id={sectionId ?? undefined}
       data-mutable-content={mutableContent ? "true" : undefined}
     >
@@ -204,6 +204,7 @@ export function SectionView({
 function InstructionBanner({ text }: { text: string }) {
   return (
     <div
+      className="tpe-instruction-banner"
       contentEditable={false}
       style={{
         display: "flex",

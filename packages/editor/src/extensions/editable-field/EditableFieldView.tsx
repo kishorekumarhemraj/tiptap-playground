@@ -86,7 +86,7 @@ export function EditableFieldView({
 
           {/* Instruction banner */}
           {instruction && (
-            <span className={styles.instruction} contentEditable={false}>
+            <span className={`${styles.instruction} tpe-field-instruction`} contentEditable={false}>
               {instruction}
             </span>
           )}

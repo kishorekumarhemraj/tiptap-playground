@@ -57,12 +57,14 @@ export function TemplateDragHandle({ editor, active }: TemplateDragHandleProps) 
         strategy: "absolute",
       },
       nestedOptions: normalizeNestedOptions({
-        // Default strength (500) × depth gives nested blocks at depth 2 a
-        // deduction equal to BASE_SCORE (1000), scoring them to 0 and making
-        // them unselectable when the cursor is near the left edge — exactly
-        // where the handle sits. Lower strength preserves the edge-preference
-        // for parent containers while still letting nested blocks be grabbed.
-        edgeDetection: { edges: ["left", "top"], threshold: 12, strength: 200 },
+        // Sections are full-width, so their left edges are all at the same
+        // x-position as the editor margin. Using ["left"] here causes the
+        // depth penalty to fire whenever the cursor is near the drag-handle
+        // position, making the parent always win over the child. Restricting
+        // to ["top"] means the parent is only preferred when hovering over
+        // the very top strip of the container (above child content), which
+        // correctly leaves the left side free for targeting child sections.
+        edgeDetection: { edges: ["top"], threshold: 12, strength: 200 },
       }),
     });
 
