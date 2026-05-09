@@ -211,10 +211,12 @@ export function IconSaveVersion() {
 
 export function IconExportWord() {
   return (
-    <svg {...base}>
-      <rect x="2" y="2" width="9" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M5 6h4M5 9h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-      <path d="M11 9v5M9 12l2 2 2-2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <svg {...base} viewBox="0 0 16 16">
+      <rect x="1" y="1" width="10" height="13" rx="1.5" fill="#2B579A" />
+      <path d="M7 1v13" stroke="#1E3F73" strokeWidth="0.5" />
+      <text x="2" y="11" fontFamily="Arial,sans-serif" fontSize="7" fontWeight="700" fill="white" letterSpacing="-0.3">W</text>
+      <rect x="9" y="4" width="6" height="8" rx="1" fill="#E8EDF5" stroke="#2B579A" strokeWidth="0.5" />
+      <path d="M10.5 7h3M10.5 9h2" stroke="#2B579A" strokeWidth="0.9" strokeLinecap="round" />
     </svg>
   );
 }
@@ -242,6 +244,53 @@ export function IconRedo() {
     <svg {...base}>
       <path d="M13 7.5A5 5 0 1 0 11.1 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       <path d="M13 3.5v4H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function IconComment() {
+  return (
+    <svg {...base}>
+      <path d="M14 2H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2v3l3-3h7a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function IconMultiColumn() {
+  return (
+    <svg {...base}>
+      <rect x="1" y="3" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="10" y="3" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+export function IconPDF() {
+  return (
+    <svg {...base} viewBox="0 0 16 16">
+      <path d="M10 1H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V5l-4-4Z" fill="#E03E2D" />
+      <path d="M10 1v4h4" fill="#C0392B" />
+      <text x="2.5" y="12" fontFamily="Arial,sans-serif" fontSize="5" fontWeight="700" fill="white" letterSpacing="0.2">PDF</text>
+    </svg>
+  );
+}
+
+export function IconZoomOut() {
+  return (
+    <svg {...base}>
+      <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5 7h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M10.5 10.5 14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function IconZoomIn() {
+  return (
+    <svg {...base}>
+      <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5 7h4M7 5v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M10.5 10.5 14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }

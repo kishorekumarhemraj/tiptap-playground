@@ -36,6 +36,10 @@ export interface BlockAuditOptions {
 }
 
 const STAMP_META = "blockAudit:stamp";
+// Same key exported from TemplateStructureGuard — lets the guard
+// allow our attribute-only stamp transactions without treating them
+// as structural mutations.
+const GUARD_BYPASS_META = "templateGuardBypass";
 const blockAuditKey = new PluginKey("blockAudit");
 
 const DEFAULT_TYPES = [
@@ -183,6 +187,7 @@ export const BlockAudit = Extension.create<BlockAuditOptions>({
 
           if (!changed) return null;
           tr.setMeta(STAMP_META, true);
+          tr.setMeta(GUARD_BYPASS_META, true);
           tr.setMeta("addToHistory", false);
           return tr;
         },

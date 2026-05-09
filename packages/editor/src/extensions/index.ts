@@ -13,6 +13,9 @@ import { versioningModule } from "./versioning";
 import { diffViewModule } from "./diff-view";
 import { wordExportModule } from "./word-export";
 import { pagesModule } from "./pages";
+import { commentsModule } from "./comments";
+import { multiColumnModule } from "./multi-column";
+import { pdfExportModule } from "./pdf-export";
 
 /**
  * The canonical module list. Order matters - modules registered earlier
@@ -25,7 +28,9 @@ import { pagesModule } from "./pages";
  * `Editor` component, not a TipTap extension. See `react/Editor.tsx`.
  */
 export const defaultExtensionModules: EditorExtensionModule[] = [
+  // Text formatting
   coreFormattingModule,
+  // Document structure
   sectionModule,
   editableFieldModule,
   fieldModule,
@@ -34,11 +39,18 @@ export const defaultExtensionModules: EditorExtensionModule[] = [
   blockAuditModule,
   slashCommandModule,
   collaborationModule,
+  // Review & versioning
   trackChangesModule,
   versioningModule,
   diffViewModule,
-  wordExportModule,
+  // Annotations
+  commentsModule,
+  // Layout
+  multiColumnModule,
+  // Export & pages
   pagesModule,
+  wordExportModule,
+  pdfExportModule,
 ];
 
 export {
@@ -56,6 +68,9 @@ export {
   diffViewModule,
   wordExportModule,
   pagesModule,
+  commentsModule,
+  multiColumnModule,
+  pdfExportModule,
 };
 
 export {
@@ -68,3 +83,8 @@ export type { WordExportOptions } from "./word-export";
 
 export { PageBreak, Pages, PageKit } from "./pages";
 export type { PageFormat, PagesOptions, PagesMargin, PagesStorage, PageKitOptions } from "./pages";
+
+export { CommentsExtension, CommentMark } from "./comments";
+export { Column, ColumnList, ColumnResizeExtension } from "./multi-column";
+export { exportToPDF } from "./pdf-export";
+export type { PDFExportOptions } from "./pdf-export";

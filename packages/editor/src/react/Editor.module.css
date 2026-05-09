@@ -185,3 +185,41 @@
   text-decoration-color: var(--danger, #dc2626);
   background: var(--danger-soft, rgba(220, 38, 38, 0.08));
 }
+
+/* ─── Comments ────────────────────────────────────────────────────────────── */
+.proseMirror .comment-mark {
+  background: rgba(254, 243, 199, 0.6);
+  border-bottom: 2px solid #f59e0b;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.proseMirror .comment-mark-selected {
+  background: rgba(253, 230, 138, 0.85);
+  border-bottom: 2px solid #d97706;
+}
+
+/* ─── Multi-column layout ─────────────────────────────────────────────────── */
+.proseMirror .editor-column-list {
+  display: flex;
+  gap: 0;
+}
+
+.proseMirror .editor-column {
+  flex-grow: 1;
+  min-width: 60px;
+  padding: 0 12px;
+  position: relative;
+}
+
+.proseMirror .editor-column:first-child {
+  padding-left: 0;
+}
+
+.proseMirror .editor-column:last-child {
+  padding-right: 0;
+}
+
+.proseMirror .editor-column + .editor-column {
+  border-left: 1px solid var(--border, #e8e8e5);
+}

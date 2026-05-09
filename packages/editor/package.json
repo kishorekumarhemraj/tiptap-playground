@@ -33,6 +33,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
+    "@react-pdf/renderer": "^4.0.0",
     "@tiptap/core": "^3.22.4",
     "@tiptap/extension-drag-handle": "^3.22.4",
     "@tiptap/extension-drag-handle-react": "^3.22.4",
@@ -53,6 +54,9 @@
   },
   "peerDependenciesMeta": {
     "yjs": {
+      "optional": true
+    },
+    "@react-pdf/renderer": {
       "optional": true
     }
   },

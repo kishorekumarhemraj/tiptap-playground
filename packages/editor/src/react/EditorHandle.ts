@@ -1,4 +1,5 @@
 import type { Editor as TiptapEditor, JSONContent } from "@tiptap/react";
+export type { TiptapEditor };
 import type { VersionSnapshot } from "../drivers/version-store";
 
 /**
@@ -20,6 +21,12 @@ export interface EditorHandle {
     nameOrAttrs: string | Record<string, unknown>,
     attrs?: Record<string, unknown>,
   ) => boolean;
+  /**
+   * Access to the raw TipTap editor instance for React components that
+   * need direct storage read-out or command dispatch (e.g. CommentsPanel).
+   * Prefer using the typed handle methods where possible.
+   */
+  readonly tiptapEditor: TiptapEditor;
   /**
    * One-shot bootstrap: if the document is currently empty, replace it
    * with the supplied content. Intended for hosts using the
@@ -54,6 +61,9 @@ export function toEditorHandle(editor: TiptapEditor): EditorHandle {
       typeof nameOrAttrs === "string"
         ? editor.isActive(nameOrAttrs, attrs)
         : editor.isActive(nameOrAttrs),
+    get tiptapEditor() {
+      return editor;
+    },
     bootstrapIfEmpty: (content) => {
       if (editor.isDestroyed) return false;
       if (!editor.isEmpty && editor.state.doc.content.size > 2) return false;

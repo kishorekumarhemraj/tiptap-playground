@@ -21,6 +21,9 @@ const FRIENDLY_REASONS: Record<string, string> = {
 };
 
 let nextId = 1;
+// Track last-shown timestamp per action to suppress rapid repeats
+const lastShown: Record<string, number> = {};
+const DEBOUNCE_MS = 2000;
 
 function LockIcon() {
   return (
@@ -48,6 +51,10 @@ export function PermissionToast({ events }: PermissionToastProps) {
 
   useEffect(() => {
     const unsub = events.on("permission.denied", ({ action, reason }) => {
+      const now = Date.now();
+      if (lastShown[action] && now - lastShown[action] < DEBOUNCE_MS) return;
+      lastShown[action] = now;
+
       const friendly =
         FRIENDLY_REASONS[action] ??
         reason ??

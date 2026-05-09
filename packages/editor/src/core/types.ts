@@ -7,6 +7,7 @@ import type {
 } from "../drivers/signature-ceremony";
 import type { CollaborationProviderFactory } from "../drivers/collaboration-provider";
 import type { FieldRegistry } from "../drivers/field-registry";
+import type { ThreadStore } from "../drivers/thread-store";
 import type { PermissionPolicy, EditorUser } from "./policy";
 import type { EditorEventBus } from "./events";
 
@@ -46,6 +47,11 @@ export interface EditorDrivers {
    * need it.
    */
   fields?: FieldRegistry;
+  /**
+   * Thread store for the comments system. Optional — omit to disable
+   * comments entirely.
+   */
+  threadStore?: ThreadStore;
 }
 
 export interface CustomEditorFeatures extends Record<string, unknown> {}
