@@ -15,7 +15,8 @@ import type {
   EditorExtensionModule,
 } from "../core/types";
 import { Toolbar } from "./Toolbar";
-import { PagesControls } from "./PagesControls";
+import { EditorStatusBar } from "./EditorStatusBar";
+import { FloatingToolbar } from "./FloatingToolbar";
 import { TemplateDragHandle } from "./DragHandle";
 import {
   toEditorHandle,
@@ -119,13 +120,19 @@ export function Editor({
   const hasPagesExtension = !!editor?.extensionManager.extensions.find(
     (e) => e.name === "pages",
   );
+  const hasCommentsExtension = !!editor?.extensionManager.extensions.find(
+    (e) => e.name === "comments",
+  );
 
   return (
     <div className={`${styles.root} ${className ?? ""}`.trim()}>
       {!hideToolbar && <Toolbar editor={editor} items={toolbarItems} />}
-      {hasPagesExtension && <PagesControls editor={editor} />}
       <EditorContent editor={editor} className={styles.editorContent} />
+      {editor && (
+        <FloatingToolbar editor={editor} hasComments={hasCommentsExtension} />
+      )}
       <TemplateDragHandle editor={editor} active={showDragHandle} />
+      {hasPagesExtension && <EditorStatusBar editor={editor} />}
     </div>
   );
 }

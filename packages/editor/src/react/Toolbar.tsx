@@ -282,6 +282,7 @@ export function Toolbar({ editor, items, className }: ToolbarProps) {
             aria-label={tooltip}
             aria-pressed={item.isActive ? active : undefined}
             disabled={disabled}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => item.onRun(editor)}
           >
             {item.icon ?? <span className={styles.textLabel}>{item.label}</span>}

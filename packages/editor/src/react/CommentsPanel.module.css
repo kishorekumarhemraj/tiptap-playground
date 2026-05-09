@@ -1,0 +1,248 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+  overflow-y: auto;
+  font-size: 13px;
+  color: #1a1a1a;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.count {
+  background: #e5e7eb;
+  color: #374151;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.empty {
+  padding: 16px;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ─── Thread card ─────────────────────────────────────────────────────────── */
+
+.thread {
+  border-bottom: 1px solid #f3f4f6;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.thread:hover {
+  background: #f9fafb;
+}
+
+.threadSelected {
+  background: #eff6ff !important;
+  border-left: 3px solid #3b82f6;
+  padding-left: 13px;
+}
+
+/* ─── Comment ─────────────────────────────────────────────────────────────── */
+
+.comment {
+  margin-bottom: 8px;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.commentAuthor {
+  font-weight: 600;
+  font-size: 12px;
+  color: #374151;
+}
+
+.commentTime {
+  font-size: 11px;
+  color: #9ca3af;
+  flex: 1;
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.deleteBtn:hover {
+  color: #ef4444;
+}
+
+.commentBody {
+  margin: 0;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ─── Thread actions ──────────────────────────────────────────────────────── */
+
+.threadActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.actionBtn {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.actionBtn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* ─── Resolved section ────────────────────────────────────────────────────── */
+
+.resolvedSection {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 4px;
+}
+
+.resolvedToggle {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  user-select: none;
+}
+
+.resolvedToggle:hover {
+  color: #374151;
+}
+
+/* ─── Composer ────────────────────────────────────────────────────────────── */
+
+.composer {
+  margin: 8px 16px;
+  padding: 10px;
+  border: 1px dashed #3b82f6;
+  border-radius: 6px;
+  background: #eff6ff;
+}
+
+.composerHint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #3b82f6;
+}
+
+.composerForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.composerInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.composerInput:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.composerButtons {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.submitBtn {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.1s;
+}
+
+.cancelBtn:hover {
+  background: #f3f4f6;
+}
+
+/* ─── Editor mark styles (injected via global CSS) ─────────────────────────
+   These are referenced by CommentsExtension decorations.
+   Include CommentsPanel.module.css or add to editor global styles.       */
+:global(.comment-mark) {
+  background: rgba(254, 243, 199, 0.6);
+  border-bottom: 2px solid #f59e0b;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+:global(.comment-mark-selected) {
+  background: rgba(253, 230, 138, 0.8);
+  border-bottom: 2px solid #d97706;
+}

@@ -1,0 +1,86 @@
+.statusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: 32px;
+  background: var(--bg-card, #ffffff);
+  border-top: 1px solid var(--border, #e4e4e7);
+  flex-shrink: 0;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 11px;
+  color: var(--fg-muted, #6b6b68);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.formatBadge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--fg-3, #a1a1aa);
+  background: var(--bg-subtle, #f4f4f2);
+  border: 1px solid var(--border, #e4e4e7);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.zoomBtn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--fg-muted, #6b6b68);
+  cursor: pointer;
+  transition: background 80ms ease, color 80ms ease;
+}
+
+.zoomBtn:hover:not(:disabled) {
+  background: var(--bg-muted, #f4f4f2);
+  color: var(--fg, #1a1a1a);
+}
+
+.zoomBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.zoomSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg-muted, #6b6b68);
+  cursor: pointer;
+  padding: 0 2px;
+  text-align: center;
+  width: 42px;
+}
+
+.zoomSelect:hover {
+  color: var(--fg, #1a1a1a);
+}
+
+.zoomSelect:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  border-radius: 3px;
+}

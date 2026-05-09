@@ -13,6 +13,7 @@ import {
   consoleAuditLog,
   localStorageVersionStore,
   memoryFieldRegistry,
+  InMemoryThreadStore,
   type CollaborationProvider,
   type CollaborationProviderFactory,
   type EditorDrivers,
@@ -89,6 +90,7 @@ export function buildPlaygroundDrivers(documentId: string): EditorDrivers {
     auditLog: consoleAuditLog(),
     collaboration: collaboration ?? undefined,
     fields: memoryFieldRegistry(DEMO_FIELDS, renderField),
+    threadStore: new InMemoryThreadStore(),
   };
 }
 

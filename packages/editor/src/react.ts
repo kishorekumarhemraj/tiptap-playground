@@ -15,6 +15,8 @@ export { Toolbar } from "./react/Toolbar";
 export type { ToolbarProps } from "./react/Toolbar";
 
 export { PagesControls } from "./react/PagesControls";
+export { EditorStatusBar } from "./react/EditorStatusBar";
+export { FloatingToolbar } from "./react/FloatingToolbar";
 
 export { VersionsPanel } from "./react/VersionsPanel";
 export type { VersionsPanelProps } from "./react/VersionsPanel";
@@ -26,3 +28,5 @@ export {
   type DiffViewProps,
   type DiffPaneVersion,
 } from "./extensions/diff-view";
+
+export { CommentsPanel } from "./react/CommentsPanel";

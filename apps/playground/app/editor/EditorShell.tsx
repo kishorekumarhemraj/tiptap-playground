@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
-import type { EditorHandle } from "@tiptap-playground/editor/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JSONContent } from "@tiptap/core";
 import {
   defaultExtensionModules,
@@ -15,6 +14,7 @@ import {
   Editor,
   DiffView,
   type DiffPaneVersion,
+  type EditorHandle,
   type VersionsPanelHandle,
 } from "@tiptap-playground/editor/react";
 import { buildPlaygroundDrivers } from "./drivers";
@@ -143,6 +143,7 @@ export function EditorShell() {
     }
   }, []);
   const [editor, setEditor] = useState<VersionsPanelHandle | null>(null);
+  const [editorHandle, setEditorHandle] = useState<EditorHandle | null>(null);
   const [docJson, setDocJson] = useState<JSONContent | null>(null);
   const [diffSelection, setDiffSelection] = useState<{
     left: string | null;
@@ -156,6 +157,7 @@ export function EditorShell() {
   // Restore preview: show a DiffView of the target version vs current content
   // with a Restore button before committing. Null = not showing.
   const [restorePreview, setRestorePreview] = useState<VersionSnapshot | null>(null);
+  const [panelWidth, setPanelWidth] = useState(300);
 
   // Persist the current document across context rebuilds AND page
   // reloads. On mount we read from localStorage; on every update we
@@ -229,6 +231,7 @@ export function EditorShell() {
   const handleEditor = useCallback(
     (handle: EditorHandle | null, versionsPanelHandle: VersionsPanelHandle | null) => {
       setEditor(versionsPanelHandle);
+      setEditorHandle(handle);
       if (!handle || seededRef.current) return;
       // When the collaboration extension is active, the Y.Doc supersedes
       // `initialContent`. After a short settle window, seed the doc with
@@ -246,7 +249,7 @@ export function EditorShell() {
   );
 
   return (
-    <div className={styles.shell}>
+    <div className={styles.shell} style={{ "--panel-w": `${panelWidth}px` } as React.CSSProperties}>
       <TopNav mode={mode} onModeChange={setMode} />
       <ModeBanner mode={mode} />
       <div className={styles.body}>
@@ -260,7 +263,12 @@ export function EditorShell() {
           />
         </div>
         <RightPanel
+          onResize={setPanelWidth}
           editor={editor}
+          tiptapEditor={editorHandle?.tiptapEditor ?? null}
+          threadStore={driversRef.current.threadStore ?? null}
+          userId={userRef.current.id}
+          userName={userRef.current.name}
           docJson={docJson}
           diffSelection={diffSelection}
           onChangeDiffSelection={setDiffSelection}
