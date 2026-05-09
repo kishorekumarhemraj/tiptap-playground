@@ -86,6 +86,9 @@ importers:
       y-indexeddb:
         specifier: ^9.0.12
         version: 9.0.12(yjs@13.6.30)
+      y-protocols:
+        specifier: ^1.0.7
+        version: 1.0.7(yjs@13.6.30)
       y-websocket:
         specifier: ^3.0.0
         version: 3.0.0(yjs@13.6.30)

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import type { EditorHandle } from "@tiptap-playground/editor/react";
 import type { JSONContent } from "@tiptap/core";
 import {
   defaultExtensionModules,
@@ -29,6 +30,7 @@ const DOCUMENT_ID = "playground-doc";
 // fail to parse against the new schema.
 const CONTENT_KEY = `tiptap-editor:content:v2:${DOCUMENT_ID}`;
 const MODE_KEY = `tiptap-editor:mode:${DOCUMENT_ID}`;
+const USER_KEY = `tiptap-editor:user:${DOCUMENT_ID}`;
 
 function loadInitialMode(): EditorMode {
   if (typeof window === "undefined") return "template";
@@ -39,6 +41,47 @@ function loadInitialMode(): EditorMode {
     /* private mode / quota — fall through */
   }
   return "template";
+}
+
+// Demo personas — each tab picks one at random so two tabs can show
+// distinct remote cursors. In a real host the user identity comes from
+// auth (SSO claims, JWT, etc.).
+const DEMO_USERS = [
+  { name: "Priya M.",  color: "#2563eb" },
+  { name: "Alex K.",   color: "#7c3aed" },
+  { name: "Sam T.",    color: "#0d9488" },
+  { name: "Jordan R.", color: "#dc2626" },
+  { name: "Casey L.",  color: "#ea580c" },
+  { name: "Riley P.",  color: "#16a34a" },
+] as const;
+
+interface LocalUser {
+  id: string;
+  name: string;
+  color: string;
+}
+
+function loadOrCreateLocalUser(): LocalUser {
+  if (typeof window === "undefined") {
+    return { id: "user-ssr", name: "You", color: "#2563eb" };
+  }
+  try {
+    const raw = window.sessionStorage.getItem(USER_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<LocalUser>;
+      if (parsed.id && parsed.name && parsed.color) {
+        return parsed as LocalUser;
+      }
+    }
+  } catch { /* corrupt — fall through */ }
+  const persona = DEMO_USERS[Math.floor(Math.random() * DEMO_USERS.length)];
+  // Random ID per tab so each tab is a distinct peer in awareness.
+  const id = `user-${Math.random().toString(36).slice(2, 9)}`;
+  const user: LocalUser = { id, name: persona.name, color: persona.color };
+  try {
+    window.sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch { /* non-fatal */ }
+  return user;
 }
 
 const DEFAULT_CONTENT = `
@@ -89,6 +132,7 @@ function loadInitialContent(): JSONContent | string {
 }
 
 export function EditorShell() {
+  const userRef = useRef<LocalUser>(loadOrCreateLocalUser());
   const [mode, setModeState] = useState<EditorMode>(loadInitialMode);
   const setMode = useCallback((next: EditorMode) => {
     setModeState(next);
@@ -161,9 +205,9 @@ export function EditorShell() {
     return {
       documentId: DOCUMENT_ID,
       user: {
-        id: "user-local",
-        name: "You",
-        color: "#2383e2",
+        id: userRef.current.id,
+        name: userRef.current.name,
+        color: userRef.current.color,
         roles: ["author"],
       },
       readOnly: false,
@@ -176,9 +220,27 @@ export function EditorShell() {
     };
   }, [mode]);
 
+  // True after we've successfully seeded the Y.Doc with initial content
+  // for this Y.Doc lifetime. Survives the editor instance being recreated
+  // when the mode toggles, since the Y.Doc itself is cached in the
+  // collaboration provider's session map.
+  const seededRef = useRef(false);
+
   const handleEditor = useCallback(
-    (_handle: unknown, versionsPanelHandle: VersionsPanelHandle | null) => {
+    (handle: EditorHandle | null, versionsPanelHandle: VersionsPanelHandle | null) => {
       setEditor(versionsPanelHandle);
+      if (!handle || seededRef.current) return;
+      // When the collaboration extension is active, the Y.Doc supersedes
+      // `initialContent`. After a short settle window, seed the doc with
+      // the playground's default template if it's still empty so the
+      // user isn't dropped onto a blank canvas.
+      const initial = latestJsonRef.current;
+      window.setTimeout(() => {
+        if (seededRef.current) return;
+        if (handle.bootstrapIfEmpty(initial)) {
+          seededRef.current = true;
+        }
+      }, 1500);
     },
     [],
   );
