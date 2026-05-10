@@ -428,7 +428,7 @@ const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <w:spacing w:before="45" w:after="45" w:line="360" w:lineRule="auto" />
         </w:pPr>
         <w:rPr>
-            <w:rFonts w:ascii="Inter" w:cs="Inter" w:eastAsia="Inter" w:hAnsi="Inter"/>
+            <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
         </w:rPr>
     </w:style>
     <w:style w:type="paragraph" w:styleId="Heading1">
