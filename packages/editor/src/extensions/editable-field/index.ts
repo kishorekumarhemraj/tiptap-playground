@@ -16,7 +16,7 @@ export const editableFieldModule: EditorExtensionModule = {
         kind: "button",
         id: "wrapEditableField",
         label: "Editable region",
-        title: "Wrap selection as an editable region",
+        title: "Wrap Selection As Editable Region",
         icon: IconEditableField(),
         isActive: (editor) => editor.isActive("editableField"),
         onRun: (editor) => {

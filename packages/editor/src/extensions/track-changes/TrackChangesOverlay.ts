@@ -7,40 +7,7 @@ const STYLE_TAG_ID = "tpe-track-changes-style";
 /** All styles use design tokens from globals.css so they adapt to light/dark. */
 const STYLE_RULES = `
 /* ─── Active-mode banner ─────────────────────────────────────────────── */
-.tpe-tc-banner {
-  position: fixed;
-  z-index: 90;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px 6px 10px;
-  background: var(--accent-soft, rgba(37,99,235,0.10));
-  border: 1px solid var(--accent, #2563eb);
-  border-radius: var(--radius-full, 9999px);
-  color: var(--fg, #1a1a1a);
-  font-size: 12px;
-  font-weight: 500;
-  font-family: var(--font-sans, sans-serif);
-  box-shadow: var(--shadow-md, 0 4px 6px rgba(0,0,0,0.07));
-  pointer-events: none;
-  transition: opacity var(--transition-normal, 150ms ease);
-}
-.tpe-tc-banner[hidden] { display: none; }
-
-.tpe-tc-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent, #2563eb);
-  animation: tpe-tc-pulse 1.8s ease-in-out infinite;
-}
-@keyframes tpe-tc-pulse {
-  0%, 100% { box-shadow: 0 0 0 2px var(--accent-soft, rgba(37,99,235,0.15)); }
-  50%       { box-shadow: 0 0 0 6px transparent; }
-}
-
-.tpe-tc-banner-label { letter-spacing: 0.01em; color: var(--accent, #2563eb); }
-.tpe-tc-banner-author { color: var(--fg-muted, #6b6b68); font-weight: 400; }
+/* (Banner moved to Toolbar.tsx, styles in Toolbar.module.css) */
 
 /* ─── Mark colours in the document ──────────────────────────────────── */
 ins[data-track-change] {
@@ -248,7 +215,6 @@ function ensureStyles() {
   document.head.appendChild(style);
 }
 
-const bannerPluginKey = new PluginKey("trackChangesBanner");
 const popoverPluginKey = new PluginKey("trackChangesPopover");
 
 function formatRelative(ts: number): string {
@@ -303,78 +269,14 @@ function canActOnChange(
   return actor.id === changeAuthorId;
 }
 
-/**
- * Surface-level UI for track-changes. Two plugins:
- *   - a banner pinned to the top-right of the editor when tracking is on.
- *   - a rich popover on `<ins>` / `<del>` marks with Accept / Reject
- *     buttons that are role-gated (Authors can act on anyone's changes;
- *     contributors/reviewers only on their own).
- */
 export const TrackChangesOverlay = Extension.create({
   name: "trackChangesOverlay",
 
   addProseMirrorPlugins() {
     const editor = this.editor;
-    return [bannerPlugin(editor), popoverPlugin(editor)];
+    return [popoverPlugin(editor)];
   },
 });
-
-// ─── Banner plugin ──────────────────────────────────────────────────────────
-
-function bannerPlugin(editor: Editor): Plugin {
-  return new Plugin({
-    key: bannerPluginKey,
-    view(view) {
-      ensureStyles();
-      const banner = document.createElement("div");
-      banner.className = "tpe-tc-banner";
-      banner.hidden = true;
-      banner.setAttribute("role", "status");
-      banner.setAttribute("aria-live", "polite");
-      banner.innerHTML = `
-<span class="tpe-tc-dot" aria-hidden="true"></span>
-<span class="tpe-tc-banner-label">Tracking changes</span>
-<span class="tpe-tc-banner-author"></span>`;
-
-      document.body.appendChild(banner);
-
-      const render = () => {
-        const storage = editor.storage.trackChanges as
-          | TrackChangesStorage
-          | undefined;
-        const active = !!storage?.active;
-        banner.hidden = !active;
-        const authorEl = banner.querySelector<HTMLSpanElement>(
-          ".tpe-tc-banner-author",
-        );
-        if (authorEl) {
-          authorEl.textContent = storage?.author
-            ? `· ${storage.author.name}`
-            : "";
-        }
-        if (active) {
-          const r = view.dom.getBoundingClientRect();
-          banner.style.top = `${r.top + 12}px`;
-          banner.style.right = `${window.innerWidth - r.right + 12}px`;
-        }
-      };
-
-      const onTx = () => render();
-      editor.on("transaction", onTx);
-      const interval = window.setInterval(render, 400);
-      render();
-
-      return {
-        update: render,
-        destroy() {
-          editor.off("transaction", onTx);
-          window.clearInterval(interval);
-          banner.remove();
-        },
-      };
-    },
-  });
-}
 
 // ─── Popover plugin ─────────────────────────────────────────────────────────
 

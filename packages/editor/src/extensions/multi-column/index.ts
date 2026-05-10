@@ -17,7 +17,7 @@ export const multiColumnModule: EditorExtensionModule = {
       kind: "button",
       id: "insertColumns",
       label: "2 Columns",
-      title: "Insert two-column layout",
+      title: "Insert Two-Column Layout",
       icon: IconMultiColumn(),
       onRun: (editor) => {
         const makeId = () =>

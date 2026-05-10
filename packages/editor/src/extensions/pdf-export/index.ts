@@ -14,7 +14,7 @@ export const pdfExportModule: EditorExtensionModule = {
       kind: "button",
       id: "exportPDF",
       label: "Export PDF",
-      title: "Download as PDF",
+      title: "Download As PDF",
       icon: IconPDF(),
       onRun: (editor) => {
         const json = editor.getJSON();

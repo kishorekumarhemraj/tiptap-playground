@@ -52,7 +52,7 @@ export const commentsModule: EditorExtensionModule = {
         kind: "button",
         id: "addComment",
         label: "Comment",
-        title: "Add comment to selection (C)",
+        title: "Add Comment To Selection (C)",
         icon: IconComment(),
         isDisabled: (editor) => editor.state.selection.empty,
         onRun: (editor) => editor.commands.startPendingComment(),

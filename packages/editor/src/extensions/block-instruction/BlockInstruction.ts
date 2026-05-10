@@ -143,25 +143,23 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
   },
 
   onCreate() {
-    // Apply the persisted preference to the editor DOM as soon as it
-    // mounts so the user doesn't see a flash of the wrong state.
-    const show = this.editor.storage.blockInstruction.showInstructions;
-    this.editor.view.dom.classList.toggle("tpe-instructions-hidden", !show);
+    // No longer manually toggling classList; handled by ProseMirror plugin attributes.
   },
 
   addCommands() {
     return {
       toggleInstructions:
         () =>
-        ({ editor }) => {
+        ({ editor, tr, dispatch }) => {
           const show = !editor.storage.blockInstruction.showInstructions;
           editor.storage.blockInstruction.showInstructions = show;
-          // CSS class toggles all instruction surfaces (widget decorations +
-          // NodeView banners) without requiring React NodeView re-renders.
-          editor.view.dom.classList.toggle("tpe-instructions-hidden", !show);
           saveShowToStorage(show);
-          // Transaction dispatch rebuilds the decoration set for widget hints.
-          editor.view.dispatch(editor.state.tr.setMeta(instructionKey, {}));
+          if (dispatch) {
+            tr.setMeta(instructionKey, { show });
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("tpe-force-update"));
+            }
+          }
           return true;
         },
     };
@@ -243,6 +241,11 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
         props: {
           decorations(state) {
             return instructionKey.getState(state) ?? DecorationSet.empty;
+          },
+          attributes(state) {
+            // Re-evaluates on every transaction. If instructions are hidden, add the CSS class.
+            const show = editor.storage.blockInstruction?.showInstructions ?? true;
+            return show ? {} : { class: "tpe-instructions-hidden" };
           },
         },
       }),

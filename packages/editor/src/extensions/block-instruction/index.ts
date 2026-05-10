@@ -17,7 +17,7 @@ export const blockInstructionModule: EditorExtensionModule = {
         kind: "button",
         id: "toggleInstructions",
         label: "Show instructions",
-        title: "Toggle instruction hints",
+        title: "Toggle Instruction Hints",
         icon: IconInstruction(),
         isActive: (editor) =>
           editor.storage.blockInstruction?.showInstructions === true,
