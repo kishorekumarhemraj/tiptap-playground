@@ -139,7 +139,7 @@ export function SectionView({
               }}
             />
             {mutableContent && (
-              <span className={styles.mutableBadge}>Mutable</span>
+              <span className={styles.mutableBadge}>Open for editing</span>
             )}
           </div>
 
@@ -167,7 +167,7 @@ export function SectionView({
             <button
               type="button"
               className={`${styles.controlBtn} ${mutableContent ? styles.controlBtnActive : ""}`}
-              title={mutableContent ? "Lock section (make immutable)" : "Unlock section (make mutable)"}
+              title={mutableContent ? "Lock — authors cannot add or remove content" : "Unlock — allow authors to add content"}
               aria-label={mutableContent ? "Lock section" : "Unlock section"}
               aria-pressed={mutableContent}
               onClick={() => {
