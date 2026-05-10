@@ -104,13 +104,18 @@ export const CommentsExtension = Extension.create<CommentsExtensionOptions>({
           const { selection } = tr;
           if (selection.empty) return false;
 
+          // Capture the selection range now, before the async call, so the
+          // mark is applied to the right range even if focus shifts.
+          const { from, to } = selection;
+
           threadStore
             .createThread({ initialComment: { body } })
             .then((thread) => {
-              editor.commands.setMark("comment", {
-                threadId: thread.id,
-                orphan: false,
-              });
+              editor
+                .chain()
+                .setTextSelection({ from, to })
+                .setMark("comment", { threadId: thread.id, orphan: false })
+                .run();
               this.storage.selectedThreadId = thread.id;
               this.storage.pendingComment = false;
               editor.view.dispatch(

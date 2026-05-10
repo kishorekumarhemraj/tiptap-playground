@@ -242,6 +242,12 @@
   border-radius: 2px;
 }
 
+:global(.tpe-thread-mark[data-tpe-orphan="true"]) {
+  background: transparent;
+  border-bottom: none;
+  cursor: text;
+}
+
 :global(.tpe-thread-mark-selected) {
   background: rgba(253, 230, 138, 0.8);
   border-bottom: 2px solid #d97706;
