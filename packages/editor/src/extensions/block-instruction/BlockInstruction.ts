@@ -122,6 +122,7 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
         attributes: {
           instruction: {
             default: null,
+            keepOnSplit: false,
             parseHTML: (element) =>
               element.getAttribute("data-instruction") || null,
             renderHTML: (attrs) => {
