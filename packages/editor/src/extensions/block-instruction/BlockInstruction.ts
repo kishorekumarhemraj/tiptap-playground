@@ -217,11 +217,6 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
       return DecorationSet.create(doc, decos);
     }
 
-    // In template mode the instruction is already editable in the
-    // SectionView header — rendering it again as a floating widget
-    // would duplicate it. Decorations are document-mode only.
-    const isDocumentMode = this.options.mode === "document";
-
     return [
       new Plugin({
         key: instructionKey,
@@ -232,16 +227,12 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
         // Rebuild only when the doc changes or the toggle meta fires.
         state: {
           init(_, { doc }) {
-            const show =
-              isDocumentMode &&
-              (editor.storage.blockInstruction?.showInstructions ?? true);
+            const show = editor.storage.blockInstruction?.showInstructions ?? true;
             return buildDecoSet(doc, show);
           },
           apply(tr, set) {
             const toggleMeta = tr.getMeta(instructionKey);
-            const show =
-              isDocumentMode &&
-              (editor.storage.blockInstruction?.showInstructions ?? true);
+            const show = editor.storage.blockInstruction?.showInstructions ?? true;
             if (toggleMeta !== undefined || tr.docChanged) {
               return buildDecoSet(tr.doc, show);
             }
