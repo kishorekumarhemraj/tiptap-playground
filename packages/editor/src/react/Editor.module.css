@@ -187,14 +187,14 @@
 }
 
 /* ─── Comments ────────────────────────────────────────────────────────────── */
-.proseMirror .comment-mark {
+.proseMirror .tpe-thread-mark {
   background: rgba(254, 243, 199, 0.6);
   border-bottom: 2px solid #f59e0b;
   cursor: pointer;
   border-radius: 2px;
 }
 
-.proseMirror .comment-mark-selected {
+.proseMirror .tpe-thread-mark-selected {
   background: rgba(253, 230, 138, 0.85);
   border-bottom: 2px solid #d97706;
 }

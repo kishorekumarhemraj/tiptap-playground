@@ -268,7 +268,6 @@ export function EditorShell() {
           tiptapEditor={editorHandle?.tiptapEditor ?? null}
           threadStore={driversRef.current.threadStore ?? null}
           userId={userRef.current.id}
-          userName={userRef.current.name}
           docJson={docJson}
           diffSelection={diffSelection}
           onChangeDiffSelection={setDiffSelection}

@@ -235,14 +235,14 @@
 /* ─── Editor mark styles (injected via global CSS) ─────────────────────────
    These are referenced by CommentsExtension decorations.
    Include CommentsPanel.module.css or add to editor global styles.       */
-:global(.comment-mark) {
+:global(.tpe-thread-mark) {
   background: rgba(254, 243, 199, 0.6);
   border-bottom: 2px solid #f59e0b;
   cursor: pointer;
   border-radius: 2px;
 }
 
-:global(.comment-mark-selected) {
+:global(.tpe-thread-mark-selected) {
   background: rgba(253, 230, 138, 0.8);
   border-bottom: 2px solid #d97706;
 }

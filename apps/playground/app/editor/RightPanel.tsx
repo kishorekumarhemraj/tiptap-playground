@@ -18,7 +18,6 @@ interface RightPanelProps {
   tiptapEditor: TiptapEditor | null;
   threadStore: ThreadStore | null;
   userId: string;
-  userName: string;
   docJson?: JSONContent | null;
   diffSelection: { left: string | null; right: string | null };
   onChangeDiffSelection: (s: {
@@ -35,7 +34,6 @@ export function RightPanel({
   tiptapEditor,
   threadStore,
   userId,
-  userName,
   docJson,
   diffSelection,
   onChangeDiffSelection,
@@ -201,7 +199,6 @@ export function RightPanel({
               editor={tiptapEditor}
               threadStore={threadStore}
               userId={userId}
-              userName={userName}
             />
           ) : (
             <p style={{ padding: 16, fontSize: 13, color: "#6b7280" }}>
