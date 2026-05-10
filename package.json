@@ -4,7 +4,9 @@
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "dev": "pnpm --filter @tiptap-playground/app dev",
+    "dev": "node server/collab.cjs & pnpm --filter @tiptap-playground/app dev",
+    "dev:app": "pnpm --filter @tiptap-playground/app dev",
+    "dev:collab": "node server/collab.cjs",
     "build": "pnpm --filter @tiptap-playground/app build",
     "typecheck": "pnpm -r run typecheck",
     "lint": "pnpm -r run lint"
@@ -13,6 +15,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "ws": "^8.20.0"
   }
 }

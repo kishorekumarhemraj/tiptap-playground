@@ -5,7 +5,7 @@ import {
   useEditor,
   type JSONContent,
 } from "@tiptap/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   buildTiptapExtensions,
   buildToolbarItems,
@@ -112,6 +112,20 @@ export function Editor({
     };
   }, [editor, onEditor]);
 
+  // Force re-render on transactions to ensure UI updates for storage mutations
+  // (like track changes and instructions toggles) that don't change doc/selection.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => setTick((t) => t + 1);
+    editor.on("transaction", update);
+    window.addEventListener("tpe-force-update", update);
+    return () => {
+      editor.off("transaction", update);
+      window.removeEventListener("tpe-force-update", update);
+    };
+  }, [editor]);
+
   // Drag handle is template-mode only — in document mode the structure is
   // frozen, so a handle would be misleading. We keep TemplateDragHandle
   // mounted even when inactive (active=false) to avoid the removeChild
@@ -125,8 +139,15 @@ export function Editor({
     (e) => e.name === "comments",
   );
 
+  const showInstructions =
+    editor?.storage.blockInstruction?.showInstructions !== false;
+
   return (
-    <div className={`${styles.root} ${className ?? ""}`.trim()}>
+    <div
+      className={`${styles.root} ${className ?? ""} ${
+        !showInstructions ? "tpe-instructions-hidden" : ""
+      }`.trim()}
+    >
       {!hideToolbar && <Toolbar editor={editor} items={toolbarItems} />}
       <EditorContent editor={editor} className={styles.editorContent} />
       {editor && (

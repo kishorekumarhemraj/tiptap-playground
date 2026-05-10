@@ -34,7 +34,7 @@ export const wordExportModule: EditorExtensionModule = {
         kind: "button",
         id: "word-insert-page-break",
         label: "Page break",
-        title: "Insert page break",
+        title: "Insert Page Break",
         icon: IconPageBreak(),
         onRun: (editor) => editor.chain().focus().insertPageBreak().run(),
       },
@@ -42,7 +42,7 @@ export const wordExportModule: EditorExtensionModule = {
         kind: "button",
         id: "word-export",
         label: "Export Word",
-        title: "Export to Word (.docx)",
+        title: "Export To Word (.docx)",
         icon: IconExportWord(),
         onRun: (editor) => {
           const json = editor.getJSON();

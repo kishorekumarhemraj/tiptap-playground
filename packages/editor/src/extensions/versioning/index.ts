@@ -35,7 +35,7 @@ export const versioningModule: EditorExtensionModule = {
       kind: "button",
       id: "saveVersion",
       label: "Save version",
-      title: "Save a named version snapshot",
+      title: "Save A Named Version Snapshot",
       icon: IconSaveVersion(),
       onRun: (editor) => {
         const label =

@@ -93,15 +93,11 @@ export function defaultSlashCommands(
       description: "Container for grouping blocks into a named region",
       keywords: ["section", "group", "container", "region"],
       run: (editor, range) => {
-        const title =
-          typeof window !== "undefined"
-            ? (window.prompt("Section title (optional)", "") ?? "").trim()
-            : "";
         editor
           .chain()
           .focus()
           .deleteRange(range)
-          .setSection(title ? { title } : {})
+          .setSection({})
           .run();
       },
     });
@@ -111,18 +107,11 @@ export function defaultSlashCommands(
       description: "Free-form area the end user fills in",
       keywords: ["editable", "field", "fill", "input", "region"],
       run: (editor, range) => {
-        const instruction =
-          typeof window !== "undefined"
-            ? (window.prompt(
-                "Instruction for this editable region (optional)",
-                "",
-              ) ?? "").trim()
-            : "";
         editor
           .chain()
           .focus()
           .deleteRange(range)
-          .setEditableField(instruction ? { instruction } : {})
+          .setEditableField({})
           .run();
       },
     });
@@ -132,10 +121,6 @@ export function defaultSlashCommands(
       description: "Paragraph with an author-facing instruction on top",
       keywords: ["instruction", "guidance", "help", "hint", "note"],
       run: (editor, range) => {
-        const text =
-          typeof window !== "undefined"
-            ? (window.prompt("Instruction for this block", "") ?? "").trim()
-            : "";
         editor
           .chain()
           .focus()
@@ -143,8 +128,7 @@ export function defaultSlashCommands(
           .command(({ tr, state, dispatch }) => {
             const paragraphType = state.schema.nodes.paragraph;
             if (!paragraphType) return false;
-            const attrs = text ? { instruction: text } : null;
-            const node = paragraphType.createAndFill(attrs);
+            const node = paragraphType.createAndFill();
             if (!node) return false;
             tr.replaceSelectionWith(node);
             if (dispatch) dispatch(tr);

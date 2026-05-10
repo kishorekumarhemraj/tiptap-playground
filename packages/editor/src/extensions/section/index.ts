@@ -17,7 +17,7 @@ export const sectionModule: EditorExtensionModule = {
         kind: "button",
         id: "wrapSection",
         label: "Section",
-        title: "Wrap selection in a section",
+        title: "Wrap Selection In Section",
         icon: IconSection(),
         isActive: (editor) => editor.isActive("section"),
         onRun: (editor) => {

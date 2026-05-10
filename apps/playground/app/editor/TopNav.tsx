@@ -1,20 +1,39 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import type { EditorMode } from "@tiptap-playground/editor";
 import styles from "./TopNav.module.css";
 
-const PRESENCE_USERS = [
-  { id: "u1", name: "Priya M.", color: "#2563eb", initials: "PM" },
-  { id: "u2", name: "Alex K.", color: "#7c3aed", initials: "AK" },
-  { id: "u3", name: "Sam T.", color: "#0d9488", initials: "ST" },
-];
+export interface DemoUser {
+  id: string;
+  name: string;
+  color: string;
+  initials: string;
+}
 
 interface TopNavProps {
   mode: EditorMode;
   onModeChange: (mode: EditorMode) => void;
+  currentUser: DemoUser;
+  availableUsers: DemoUser[];
+  onUserChange: (user: DemoUser) => void;
 }
 
-export function TopNav({ mode, onModeChange }: TopNavProps) {
+export function TopNav({ mode, onModeChange, currentUser, availableUsers, onUserChange }: TopNavProps) {
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the dropdown when clicking outside
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [userMenuOpen]);
   return (
     <header className={styles.nav}>
       {/* Logo */}
@@ -65,23 +84,86 @@ export function TopNav({ mode, onModeChange }: TopNavProps) {
         })}
       </div>
 
+      {/* User switcher */}
+      <div className={styles.userSwitcher} ref={menuRef}>
+        <button
+          type="button"
+          className={styles.userSwitcherBtn}
+          onClick={() => setUserMenuOpen(!userMenuOpen)}
+          aria-expanded={userMenuOpen}
+          aria-haspopup="listbox"
+          aria-label="Switch user"
+          title="Switch user for collaborative editing"
+        >
+          <div
+            className={styles.userSwitcherAvatar}
+            style={{ background: currentUser.color }}
+          >
+            {currentUser.initials}
+          </div>
+          <div className={styles.userSwitcherInfo}>
+            <span className={styles.userSwitcherName}>{currentUser.name}</span>
+            <span className={styles.userSwitcherHint}>Switch user</span>
+          </div>
+          <span className={styles.userSwitcherChevron} aria-hidden="true">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </button>
+
+        {userMenuOpen && (
+          <div className={styles.userMenu} role="listbox" aria-label="Select user">
+            <div className={styles.userMenuHeader}>Switch User</div>
+            {availableUsers.map((u) => {
+              const isSelected = u.id === currentUser.id;
+              return (
+                <button
+                  key={u.id}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  className={`${styles.userMenuItem} ${isSelected ? styles.userMenuItemActive : ""}`}
+                  onClick={() => {
+                    onUserChange(u);
+                    setUserMenuOpen(false);
+                  }}
+                >
+                  <div
+                    className={styles.userMenuAvatar}
+                    style={{ background: u.color }}
+                  >
+                    {u.initials}
+                  </div>
+                  <span className={styles.userMenuName}>{u.name}</span>
+                  {isSelected && (
+                    <span className={styles.userMenuCheck} aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8.5 6.5 12 13 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            <div className={styles.userMenuFooter}>
+              Open another tab to test collaboration
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Presence avatars */}
       <div className={styles.presence}>
         <div className={styles.avatarStack}>
-          {PRESENCE_USERS.map((u) => (
-            <div
-              key={u.id}
-              className={styles.presenceAvatar}
-              style={{ background: u.color }}
-              title={u.name}
-            >
-              {u.initials}
-            </div>
-          ))}
+          <div
+            className={styles.presenceAvatar}
+            style={{ background: currentUser.color }}
+            title={currentUser.name}
+          >
+            {currentUser.initials}
+          </div>
         </div>
-        <span className={styles.presenceLabel}>
-          {PRESENCE_USERS.length} editing
-        </span>
       </div>
 
       {/* Settings */}
@@ -92,15 +174,6 @@ export function TopNav({ mode, onModeChange }: TopNavProps) {
       >
         <SettingsIcon />
       </button>
-
-      {/* Current user */}
-      <div
-        className={styles.currentUser}
-        style={{ background: "#2563eb" }}
-        title="Priya M."
-      >
-        PM
-      </div>
     </header>
   );
 }

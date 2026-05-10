@@ -182,7 +182,7 @@ export const TrackChanges = Extension.create<
     return {
       setTrackChanges:
         (active) =>
-        ({ editor }) => {
+        ({ editor, tr, dispatch }) => {
           const ctx = options.getPolicyContext?.();
           if (options.policy && ctx) {
             const decision = options.policy.canToggleTrackChanges(ctx);
@@ -191,7 +191,12 @@ export const TrackChanges = Extension.create<
             }
           }
           editor.storage.trackChanges.active = active;
-          editor.view.dispatch(editor.state.tr.setMeta(SUPPRESS_META, true));
+          if (dispatch) {
+            tr.setMeta(SUPPRESS_META, true);
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("tpe-force-update"));
+            }
+          }
           options.events?.emit("change.tracking.toggled", { active });
           options.audit?.record({
             type: "change.tracking.toggled",

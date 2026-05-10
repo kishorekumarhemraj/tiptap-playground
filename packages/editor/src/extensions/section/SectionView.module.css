@@ -112,6 +112,17 @@
   flex-shrink: 0;
 }
 
+.lockedBadge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--red, #dc2626);
+  background: var(--red-soft, rgba(220, 38, 38, 0.10));
+  border-radius: var(--r-full, 9999px);
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ── Controls (always in DOM, opacity-toggled) ── */
 .controls {
   display: flex;
@@ -156,6 +167,26 @@
 .controlBtnDanger:hover {
   background: var(--red-soft, rgba(220, 38, 38, 0.08));
   border-color: rgba(220, 38, 38, 0.3);
+}
+
+.controlBtnActive {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.controlBtnActive:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.controlBtnLocked {
+  background: var(--red-soft, rgba(220, 38, 38, 0.08));
+  border-color: rgba(220, 38, 38, 0.3);
+  color: var(--red, #dc2626);
+}
+
+.controlBtnLocked:hover {
+  background: rgba(220, 38, 38, 0.12);
 }
 
 /* ─── Instruction row (template mode) ───────────────────────────────────── */
@@ -271,13 +302,35 @@
   right: 12px;
   opacity: 0;
   transition: opacity var(--transition-normal, 160ms ease);
-  pointer-events: none;
-  z-index: 2;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 5;
   background: var(--bg-card, #fff);
-  line-height: 1;
   display: flex;
   align-items: center;
-  color: rgba(37, 99, 235, 0.45);
+  justify-content: center;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--fg-3, #a1a1aa);
+  transition: opacity var(--transition-normal, 160ms ease), transform var(--transition-fast, 100ms ease), background var(--transition-fast);
+}
+
+.docLock:hover {
+  transform: scale(1.1);
+  background: var(--bg-hover, #efeeec);
+}
+
+.docLock:active {
+  transform: scale(0.95);
+}
+
+.docLockLocked {
+  color: var(--red, #dc2626);
+}
+
+.docLockEditable {
+  color: #10b981;
 }
 
 .documentMode:hover > .docLock {
