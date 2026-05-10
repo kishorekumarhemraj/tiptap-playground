@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useRef, useEffect, type FormEvent } from "react";
-import { BubbleMenu } from "@tiptap/react/menus";
 import type { Editor } from "@tiptap/react";
 import styles from "./FloatingCommentComposer.module.css";
 
@@ -9,28 +8,43 @@ interface Props {
   editor: Editor;
 }
 
+interface Position {
+  top: number;
+  left: number;
+}
+
 /**
- * Floating comment composer anchored to the current selection.
- * Appears when `editor.storage.comments.pendingComment === true` and
- * dismisses on submit, cancel, or Escape.
+ * Inline comment composer anchored to the current text selection.
+ *
+ * Uses a fixed-position overlay driven by React state rather than BubbleMenu,
+ * because BubbleMenu skips re-evaluation on meta-only transactions (like
+ * startPendingComment which doesn't change the doc or selection).
  */
 export function FloatingCommentComposer({ editor }: Props) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<Position>({ top: 0, left: 0 });
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Focus the textarea whenever pendingComment transitions to true
   useEffect(() => {
     const handler = () => {
       const storage = (editor.storage as Record<string, any>).comments;
       if (storage?.pendingComment) {
-        // Small delay to let the BubbleMenu position itself first
+        const { from, to } = editor.state.selection;
+        const anchor = Math.min(from, to);
+        const coords = editor.view.coordsAtPos(anchor);
+        setPos({ top: coords.bottom + 8, left: coords.left });
+        setOpen(true);
         setTimeout(() => textareaRef.current?.focus(), 30);
       } else {
+        setOpen(false);
         setText("");
       }
     };
     editor.on("transaction", handler);
-    return () => { editor.off("transaction", handler); };
+    return () => {
+      editor.off("transaction", handler);
+    };
   }, [editor]);
 
   const submit = () => {
@@ -50,15 +64,12 @@ export function FloatingCommentComposer({ editor }: Props) {
     submit();
   };
 
+  if (!open) return null;
+
   return (
-    <BubbleMenu
-      editor={editor}
-      shouldShow={({ editor: e }) => {
-        const storage = (e.storage as Record<string, any>).comments;
-        return storage?.pendingComment === true;
-      }}
-      options={{ placement: "bottom-start" }}
-      updateDelay={0}
+    <div
+      className={styles.overlay}
+      style={{ top: pos.top, left: pos.left }}
     >
       <form className={styles.composer} onSubmit={handleSubmit}>
         <textarea
@@ -93,6 +104,6 @@ export function FloatingCommentComposer({ editor }: Props) {
           </button>
         </div>
       </form>
-    </BubbleMenu>
+    </div>
   );
 }
