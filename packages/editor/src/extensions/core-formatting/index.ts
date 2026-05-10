@@ -69,34 +69,31 @@ export const coreFormattingModule: EditorExtensionModule = {
   ],
   toolbar: (ctx) => [
     // ── History ──────────────────────────────────────────────────────────
-    // Only show undo/redo when not in collab mode (Yjs manages its own stack)
-    ...(ctx.drivers.collaboration
-      ? []
-      : [
-          {
-            kind: "button" as const,
-            id: "undo",
-            label: "Undo",
-            title: "Undo (⌘Z)",
-            icon: IconUndo(),
-            isDisabled: (editor: import("@tiptap/react").Editor) =>
-              !editor.can().undo(),
-            onRun: (editor: import("@tiptap/react").Editor) =>
-              editor.chain().focus().undo().run(),
-          },
-          {
-            kind: "button" as const,
-            id: "redo",
-            label: "Redo",
-            title: "Redo (⌘⇧Z)",
-            icon: IconRedo(),
-            isDisabled: (editor: import("@tiptap/react").Editor) =>
-              !editor.can().redo(),
-            onRun: (editor: import("@tiptap/react").Editor) =>
-              editor.chain().focus().redo().run(),
-          },
-          { kind: "divider" as const, id: "history-divider" },
-        ]),
+    // StarterKit history is disabled in collab mode, but the Collaboration
+    // extension provides its own yjs-aware undo/redo commands.
+    {
+      kind: "button" as const,
+      id: "undo",
+      label: "Undo",
+      title: "Undo (⌘Z)",
+      icon: IconUndo(),
+      isDisabled: (editor: import("@tiptap/react").Editor) =>
+        !editor.can().undo(),
+      onRun: (editor: import("@tiptap/react").Editor) =>
+        editor.chain().focus().undo().run(),
+    },
+    {
+      kind: "button" as const,
+      id: "redo",
+      label: "Redo",
+      title: "Redo (⌘⇧Z)",
+      icon: IconRedo(),
+      isDisabled: (editor: import("@tiptap/react").Editor) =>
+        !editor.can().redo(),
+      onRun: (editor: import("@tiptap/react").Editor) =>
+        editor.chain().focus().redo().run(),
+    },
+    { kind: "divider" as const, id: "history-divider" },
 
     // ── Text style ────────────────────────────────────────────────────────
     {

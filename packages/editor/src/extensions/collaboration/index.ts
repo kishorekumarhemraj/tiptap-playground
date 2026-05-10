@@ -1,6 +1,7 @@
 import type { AnyExtension } from "@tiptap/react";
 import { Collaboration } from "@tiptap/extension-collaboration";
 import { CollaborationCaret } from "@tiptap/extension-collaboration-caret";
+import { CollaborationMigration } from "./migration";
 import type { EditorExtensionModule } from "../../core/types";
 import type {
   CollaborationProvider,
@@ -154,6 +155,10 @@ export const collaborationModule: EditorExtensionModule = {
 
     const exts: AnyExtension[] = [
       Collaboration.configure({ document: provider.ydoc }),
+      CollaborationMigration.configure({
+        fragment: provider.ydoc.getXmlFragment("default"),
+        rules: [], // Add migration rules here in the future
+      }),
     ];
 
     if (provider.awarenessProvider) {

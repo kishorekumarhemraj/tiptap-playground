@@ -46,22 +46,6 @@ function saveShowToStorage(show: boolean): void {
 
 const STYLE_TAG_ID = "tpe-block-instruction-style";
 const STYLE_RULES = `
-.tpe-instruction-widget {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  line-height: 1;
-  color: var(--instruction-accent, #3b82f6);
-  background: var(--instruction-bg, rgba(59, 130, 246, 0.1));
-  padding: 4px 8px;
-  border-radius: 12px;
-  margin: 0 0 2px;
-  user-select: none;
-  pointer-events: none;
-  font-style: normal;
-  font-weight: 500;
-}
 
 /* Hide ALL instruction surfaces (widget decorations + NodeView banners)
    when the editor root carries this class. NodeView banners can't
@@ -138,6 +122,7 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
         attributes: {
           instruction: {
             default: null,
+            keepOnSplit: false,
             parseHTML: (element) =>
               element.getAttribute("data-instruction") || null,
             renderHTML: (attrs) => {
@@ -195,6 +180,9 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
       doc.forEach((node, pos) => {
         const instruction = node.attrs?.instruction as string | null;
         if (!instruction) return;
+        // section and editableField render their own instruction UI in their
+        // NodeViews — adding a widget decoration here would duplicate it.
+        if (node.type.name === "section" || node.type.name === "editableField") return;
         decos.push(
           Decoration.widget(
             pos,
@@ -203,7 +191,24 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
               el.className = "tpe-instruction-widget";
               el.setAttribute("contenteditable", "false");
               el.setAttribute("aria-label", `Instruction: ${instruction}`);
-              el.textContent = `💡 ${instruction}`;
+              Object.assign(el.style, {
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "6px",
+                padding: "6px 10px",
+                marginBottom: "6px",
+                background: "rgba(37,99,235,0.10)",
+                borderRadius: "6px",
+                border: "1px solid rgba(37,99,235,0.15)",
+                fontSize: "12px",
+                color: "#3b5ea6",
+                lineHeight: "1.4",
+                userSelect: "none",
+                pointerEvents: "none",
+                fontStyle: "normal",
+                fontWeight: "400",
+              });
+              el.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true" style="flex-shrink:0;margin-top:1px"><circle cx="8" cy="8" r="6" stroke="#3b5ea6" stroke-width="1.4"/><line x1="8" y1="7.5" x2="8" y2="11.5" stroke="#3b5ea6" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="5.5" r="0.75" fill="#3b5ea6"/></svg><span>${instruction}</span>`;
               return el;
             },
             { side: -1, key: `instruction:${pos}:${instruction}` },
@@ -212,11 +217,6 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
       });
       return DecorationSet.create(doc, decos);
     }
-
-    // In template mode the instruction is already editable in the
-    // SectionView header — rendering it again as a floating widget
-    // would duplicate it. Decorations are document-mode only.
-    const isDocumentMode = this.options.mode === "document";
 
     return [
       new Plugin({
@@ -228,16 +228,12 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
         // Rebuild only when the doc changes or the toggle meta fires.
         state: {
           init(_, { doc }) {
-            const show =
-              isDocumentMode &&
-              (editor.storage.blockInstruction?.showInstructions ?? true);
+            const show = editor.storage.blockInstruction?.showInstructions ?? true;
             return buildDecoSet(doc, show);
           },
           apply(tr, set) {
             const toggleMeta = tr.getMeta(instructionKey);
-            const show =
-              isDocumentMode &&
-              (editor.storage.blockInstruction?.showInstructions ?? true);
+            const show = editor.storage.blockInstruction?.showInstructions ?? true;
             if (toggleMeta !== undefined || tr.docChanged) {
               return buildDecoSet(tr.doc, show);
             }
