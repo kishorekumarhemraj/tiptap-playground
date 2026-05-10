@@ -112,6 +112,17 @@
   flex-shrink: 0;
 }
 
+.lockedBadge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-3, #a1a1aa);
+  background: rgba(161, 161, 170, 0.12);
+  border-radius: var(--r-full, 9999px);
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ── Controls (always in DOM, opacity-toggled) ── */
 .controls {
   display: flex;

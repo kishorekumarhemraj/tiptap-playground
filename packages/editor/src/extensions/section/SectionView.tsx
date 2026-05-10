@@ -138,9 +138,9 @@ export function SectionView({
                 if (next !== current) updateAttributes({ title: next });
               }}
             />
-            {mutableContent && (
-              <span className={styles.mutableBadge}>Open for editing</span>
-            )}
+            <span className={mutableContent ? styles.mutableBadge : styles.lockedBadge}>
+              {mutableContent ? "Unlocked" : "Locked"}
+            </span>
           </div>
 
           {/* Controls — opacity toggled by CSS :hover on parent */}
