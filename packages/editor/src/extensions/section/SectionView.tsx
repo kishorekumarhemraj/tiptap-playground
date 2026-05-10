@@ -52,11 +52,18 @@ function PenIcon() {
   );
 }
 
-function LockIcon({ size = 11 }: { size?: number }) {
+function LockClosedIcon({ size = 11 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <rect x="4" y="8" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M5.5 8V6a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="16" r="1"/><rect x="3" y="10" width="18" height="12" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/>
+    </svg>
+  );
+}
+
+function LockOpenIcon({ size = 11 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="16" r="1"/><rect width="18" height="12" x="3" y="10" rx="2"/><path d="M7 10V7a5 5 0 0 1 9.33-2.5"/>
     </svg>
   );
 }
@@ -138,9 +145,6 @@ export function SectionView({
                 if (next !== current) updateAttributes({ title: next });
               }}
             />
-            <span className={mutableContent ? styles.mutableBadge : styles.lockedBadge}>
-              {mutableContent ? "Editable" : "Locked"}
-            </span>
           </div>
 
           {/* Controls — opacity toggled by CSS :hover on parent */}
@@ -166,7 +170,7 @@ export function SectionView({
             </button>
             <button
               type="button"
-              className={`${styles.controlBtn} ${mutableContent ? styles.controlBtnActive : ""}`}
+              className={`${styles.controlBtn} ${mutableContent ? styles.controlBtnActive : styles.controlBtnLocked}`}
               title={mutableContent ? "Lock — authors cannot add or remove content" : "Unlock — allow authors to add content"}
               aria-label={mutableContent ? "Lock section" : "Unlock section"}
               aria-pressed={mutableContent}
@@ -174,7 +178,7 @@ export function SectionView({
                 updateAttributes({ mutableContent: !mutableContent });
               }}
             >
-              <LockIcon />
+              {mutableContent ? <LockOpenIcon /> : <LockClosedIcon />}
             </button>
             <button
               type="button"
@@ -235,11 +239,9 @@ export function SectionView({
               modifiedAt={modifiedAt}
             />
           )}
-          {!mutableContent && (
-            <div className={styles.docLock} contentEditable={false}>
-              <LockIcon size={12} />
-            </div>
-          )}
+          <div className={`${styles.docLock} ${mutableContent ? styles.docLockEditable : styles.docLockLocked}`} contentEditable={false}>
+            {mutableContent ? <LockOpenIcon size={12} /> : <LockClosedIcon size={12} />}
+          </div>
         </>
       )}
 

@@ -170,13 +170,23 @@
 }
 
 .controlBtnActive {
-  background: var(--teal-chip, rgba(13, 148, 136, 0.13));
-  border-color: var(--teal, #0d9488);
-  color: var(--teal, #0d9488);
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+  color: #10b981;
 }
 
 .controlBtnActive:hover {
-  background: rgba(13, 148, 136, 0.2);
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.controlBtnLocked {
+  background: var(--red-soft, rgba(220, 38, 38, 0.08));
+  border-color: rgba(220, 38, 38, 0.3);
+  color: var(--red, #dc2626);
+}
+
+.controlBtnLocked:hover {
+  background: rgba(220, 38, 38, 0.12);
 }
 
 /* ─── Instruction row (template mode) ───────────────────────────────────── */
@@ -298,7 +308,15 @@
   line-height: 1;
   display: flex;
   align-items: center;
-  color: rgba(37, 99, 235, 0.45);
+  color: var(--fg-3, #a1a1aa);
+}
+
+.docLockLocked {
+  color: var(--red, #dc2626);
+}
+
+.docLockEditable {
+  color: #10b981;
 }
 
 .documentMode:hover > .docLock {
