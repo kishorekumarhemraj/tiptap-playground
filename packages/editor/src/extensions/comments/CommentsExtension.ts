@@ -17,7 +17,7 @@ declare module "@tiptap/core" {
 }
 
 const PLUGIN_KEY = new PluginKey<{ decorations: DecorationSet }>(
-  "editor-comments",
+  "tpe-comments",
 );
 
 function getThreadPositions(doc: Node) {
@@ -29,10 +29,7 @@ function getThreadPositions(doc: Node) {
       if (!threadId) continue;
       const from = pos;
       const to = pos + node.nodeSize;
-      const current = positions.get(threadId) ?? {
-        from: Infinity,
-        to: 0,
-      };
+      const current = positions.get(threadId) ?? { from: Infinity, to: 0 };
       positions.set(threadId, {
         from: Math.min(from, current.from),
         to: Math.max(to, current.to),
@@ -45,7 +42,6 @@ function getThreadPositions(doc: Node) {
 export interface CommentsExtensionOptions {
   threadStore: ThreadStore;
   userId: string;
-  userName: string;
 }
 
 export const CommentsExtension = Extension.create<CommentsExtensionOptions>({
@@ -104,25 +100,29 @@ export const CommentsExtension = Extension.create<CommentsExtensionOptions>({
         (body) =>
         ({ editor, tr, dispatch }) => {
           if (!dispatch) return true;
-          const { threadStore, userId, userName } = this.options;
+          const { threadStore } = this.options;
           const { selection } = tr;
           if (selection.empty) return false;
 
-          const threadId = crypto.randomUUID
-            ? crypto.randomUUID()
-            : Math.random().toString(36).slice(2);
+          // Capture the selection range now, before the async call, so the
+          // mark is applied to the right range even if focus shifts.
+          const { from, to } = selection;
 
-          threadStore.createThread({
-            threadId,
-            initialComment: { userId, authorName: userName, body },
-          });
+          threadStore
+            .createThread({ initialComment: { body } })
+            .then((thread) => {
+              editor
+                .chain()
+                .setTextSelection({ from, to })
+                .setMark("comment", { threadId: thread.id, orphan: false })
+                .run();
+              this.storage.selectedThreadId = thread.id;
+              this.storage.pendingComment = false;
+              editor.view.dispatch(
+                editor.state.tr.setMeta(PLUGIN_KEY, { action: "update" }),
+              );
+            });
 
-          editor.commands.setMark("comment", { threadId, orphan: false });
-
-          this.storage.selectedThreadId = threadId;
-          this.storage.pendingComment = false;
-          tr.setMeta(PLUGIN_KEY, { action: "update" });
-          dispatch(tr);
           return true;
         },
     };
@@ -154,7 +154,7 @@ export const CommentsExtension = Extension.create<CommentsExtensionOptions>({
             return {
               decorations: DecorationSet.create(tr.doc, [
                 Decoration.inline(pos.from, pos.to, {
-                  class: "comment-mark-selected",
+                  class: "tpe-thread-mark-selected",
                 }),
               ]),
             };
@@ -163,14 +163,16 @@ export const CommentsExtension = Extension.create<CommentsExtensionOptions>({
 
         props: {
           decorations(state) {
-            return PLUGIN_KEY.getState(state)?.decorations ?? DecorationSet.empty;
+            return (
+              PLUGIN_KEY.getState(state)?.decorations ?? DecorationSet.empty
+            );
           },
 
           handleClick(view, _pos, event) {
             if (event.button !== 0) return false;
 
             const target = event.target as HTMLElement | null;
-            const mark = target?.closest(".comment-mark");
+            const mark = target?.closest(".tpe-thread-mark");
             if (!mark) {
               if (ext.storage.selectedThreadId !== null) {
                 ext.storage.selectedThreadId = null;
@@ -181,7 +183,7 @@ export const CommentsExtension = Extension.create<CommentsExtensionOptions>({
               return false;
             }
 
-            const threadId = mark.getAttribute("data-thread-id");
+            const threadId = mark.getAttribute("data-tpe-thread-id");
             if (threadId && threadId !== ext.storage.selectedThreadId) {
               ext.storage.selectedThreadId = threadId;
               view.dispatch(
@@ -194,10 +196,6 @@ export const CommentsExtension = Extension.create<CommentsExtensionOptions>({
         },
       }),
     ];
-  },
-
-  onDestroy() {
-    // Nothing to clean up since threadStore lifecycle is managed by the host.
   },
 });
 

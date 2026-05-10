@@ -167,3 +167,7 @@ NEXT_PUBLIC_COLLAB_URL=ws://localhost:1234 pnpm run dev
 - `design(scope):` — UX / visual change  
 - `chore:` — tooling, deps, config  
 - Scope examples: `editor`, `track-changes`, `comments`, `pages`, `playground`
+
+## Automation Instructions
+
+- Claude must always commit any changes it makes and open a pull request targeting the `main` branch.

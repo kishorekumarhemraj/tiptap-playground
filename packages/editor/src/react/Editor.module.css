@@ -187,14 +187,22 @@
 }
 
 /* ─── Comments ────────────────────────────────────────────────────────────── */
-.proseMirror .comment-mark {
+.proseMirror .tpe-thread-mark {
   background: rgba(254, 243, 199, 0.6);
   border-bottom: 2px solid #f59e0b;
   cursor: pointer;
   border-radius: 2px;
 }
 
-.proseMirror .comment-mark-selected {
+/* Orphan = resolved or deleted thread: keep the mark in the DOM for
+   position tracking but make it invisible to the reader. */
+.proseMirror .tpe-thread-mark[data-tpe-orphan="true"] {
+  background: transparent;
+  border-bottom: none;
+  cursor: text;
+}
+
+.proseMirror .tpe-thread-mark-selected {
   background: rgba(253, 230, 138, 0.85);
   border-bottom: 2px solid #d97706;
 }

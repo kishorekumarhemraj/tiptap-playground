@@ -17,6 +17,7 @@ import type {
 import { Toolbar } from "./Toolbar";
 import { EditorStatusBar } from "./EditorStatusBar";
 import { FloatingToolbar } from "./FloatingToolbar";
+import { FloatingCommentComposer } from "./FloatingCommentComposer";
 import { TemplateDragHandle } from "./DragHandle";
 import {
   toEditorHandle,
@@ -130,6 +131,9 @@ export function Editor({
       <EditorContent editor={editor} className={styles.editorContent} />
       {editor && (
         <FloatingToolbar editor={editor} hasComments={hasCommentsExtension} />
+      )}
+      {editor && hasCommentsExtension && (
+        <FloatingCommentComposer editor={editor} />
       )}
       <TemplateDragHandle editor={editor} active={showDragHandle} />
       {hasPagesExtension && <EditorStatusBar editor={editor} />}

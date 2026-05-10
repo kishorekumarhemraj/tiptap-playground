@@ -14,7 +14,6 @@ interface CommentsPanelProps {
   editor: Editor | null;
   threadStore: ThreadStore;
   userId: string;
-  userName: string;
 }
 
 /**
@@ -26,27 +25,20 @@ export function CommentsPanel({
   editor,
   threadStore,
   userId,
-  userName,
 }: CommentsPanelProps) {
   const [threads, setThreads] = useState<Map<string, ThreadData>>(new Map());
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
-  // Subscribe to thread store changes
   useEffect(() => {
     return threadStore.subscribe((t) => setThreads(new Map(t)));
   }, [threadStore]);
 
-  // Mirror editor storage into local state so the panel re-renders on
-  // each transaction without tight coupling to editor internals.
   useEffect(() => {
     if (!editor) return;
     const update = () => {
-      // editor.storage is typed as DOM Storage; cast to access extension namespaces
       const s = (editor.storage as Record<string, any>).comments;
       if (!s) return;
       setSelectedId(s.selectedThreadId ?? null);
-      setPending(s.pendingComment ?? false);
     };
     update();
     editor.on("transaction", update);
@@ -66,19 +58,7 @@ export function CommentsPanel({
         <span className={styles.count}>{openThreads.length}</span>
       </div>
 
-      {pending && editor && (
-        <ComposerCard
-          editor={editor}
-          userId={userId}
-          userName={userName}
-          onSubmit={(body) => {
-            editor.commands.createCommentThread(body);
-          }}
-          onCancel={() => editor.commands.cancelPendingComment()}
-        />
-      )}
-
-      {openThreads.length === 0 && !pending && (
+      {openThreads.length === 0 && (
         <p className={styles.empty}>
           Select text and click <strong>Comment</strong> to start a discussion.
         </p>
@@ -90,12 +70,9 @@ export function CommentsPanel({
           thread={t}
           isSelected={t.id === selectedId}
           userId={userId}
-          userName={userName}
           threadStore={threadStore}
           onSelect={() => {
-            editor?.commands.selectThread(
-              t.id === selectedId ? null : t.id,
-            );
+            editor?.commands.selectThread(t.id === selectedId ? null : t.id);
           }}
         />
       ))}
@@ -111,12 +88,9 @@ export function CommentsPanel({
               thread={t}
               isSelected={t.id === selectedId}
               userId={userId}
-              userName={userName}
               threadStore={threadStore}
               onSelect={() =>
-                editor?.commands.selectThread(
-                  t.id === selectedId ? null : t.id,
-                )
+                editor?.commands.selectThread(t.id === selectedId ? null : t.id)
               }
             />
           ))}
@@ -132,14 +106,12 @@ function ThreadCard({
   thread,
   isSelected,
   userId,
-  userName,
   threadStore,
   onSelect,
 }: {
   thread: ThreadData;
   isSelected: boolean;
   userId: string;
-  userName: string;
   threadStore: ThreadStore;
   onSelect: () => void;
 }) {
@@ -157,10 +129,7 @@ function ThreadCard({
           comment={c}
           currentUserId={userId}
           onDelete={() =>
-            threadStore.deleteComment({
-              threadId: thread.id,
-              commentId: c.id,
-            })
+            threadStore.deleteComment({ threadId: thread.id, commentId: c.id })
           }
         />
       ))}
@@ -170,10 +139,11 @@ function ThreadCard({
           className={styles.actionBtn}
           onClick={(e) => {
             e.stopPropagation();
-            threadStore.resolveThread({
-              threadId: thread.id,
-              resolved: !thread.resolved,
-            });
+            if (thread.resolved) {
+              threadStore.unresolveThread({ threadId: thread.id });
+            } else {
+              threadStore.resolveThread({ threadId: thread.id });
+            }
           }}
         >
           {thread.resolved ? "Unresolve" : "Resolve"}
@@ -194,7 +164,7 @@ function ThreadCard({
           onSubmit={(body) => {
             threadStore.addComment({
               threadId: thread.id,
-              comment: { userId, authorName: userName, body },
+              comment: { body },
             });
             setReplyOpen(false);
           }}
@@ -216,17 +186,24 @@ function CommentRow({
   currentUserId: string;
   onDelete: () => void;
 }) {
-  const ts = new Date(comment.createdAt).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const ts = comment.createdAt instanceof Date
+    ? comment.createdAt.toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : new Date(comment.createdAt).toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
   return (
     <div className={styles.comment}>
       <div className={styles.commentHeader}>
-        <span className={styles.commentAuthor}>{comment.authorName}</span>
+        <span className={styles.commentAuthor}>{comment.userId}</span>
         <span className={styles.commentTime}>{ts}</span>
         {comment.userId === currentUserId && (
           <button
@@ -241,42 +218,11 @@ function CommentRow({
           </button>
         )}
       </div>
-      <p className={styles.commentBody}>{comment.body}</p>
-    </div>
-  );
-}
-
-// ─── ComposerCard (pending new thread) ───────────────────────────────────────
-
-function ComposerCard({
-  editor,
-  userId: _userId,
-  userName: _userName,
-  onSubmit,
-  onCancel,
-}: {
-  editor: Editor;
-  userId: string;
-  userName: string;
-  onSubmit: (body: string) => void;
-  onCancel: () => void;
-}) {
-  const selectionEmpty = editor.state.selection.empty;
-
-  return (
-    <div className={styles.composer}>
-      {selectionEmpty ? (
-        <p className={styles.composerHint}>
-          Select text in the editor first, then submit your comment.
-        </p>
-      ) : (
-        <p className={styles.composerHint}>Adding comment to selected text…</p>
-      )}
-      <InlineComposer
-        onSubmit={onSubmit}
-        onCancel={onCancel}
-        autoFocus
-      />
+      <p className={styles.commentBody}>
+        {typeof comment.body === "string"
+          ? comment.body
+          : JSON.stringify(comment.body)}
+      </p>
     </div>
   );
 }
@@ -328,11 +274,7 @@ function InlineComposer({
         <button type="submit" className={styles.submitBtn} disabled={!text.trim()}>
           Comment
         </button>
-        <button
-          type="button"
-          className={styles.cancelBtn}
-          onClick={onCancel}
-        >
+        <button type="button" className={styles.cancelBtn} onClick={onCancel}>
           Cancel
         </button>
       </div>

@@ -16,7 +16,6 @@ export const commentsModule: EditorExtensionModule = {
     const ext = CommentsExtension.configure({
       threadStore,
       userId: ctx.user.id,
-      userName: ctx.user.name,
     });
 
     // Patch lifecycle hooks to subscribe to thread store changes and keep

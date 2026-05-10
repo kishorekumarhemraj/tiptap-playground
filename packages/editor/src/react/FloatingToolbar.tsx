@@ -23,6 +23,9 @@ export function FloatingToolbar({ editor, hasComments }: Props) {
         const { empty } = state.selection;
         if (empty) return false;
         if (e.isActive("codeBlock")) return false;
+        // Hide while the comment composer popover is open
+        const commentStorage = (e.storage as Record<string, any>).comments;
+        if (commentStorage?.pendingComment) return false;
         return true;
       }}
     >

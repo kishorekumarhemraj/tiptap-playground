@@ -8,12 +8,11 @@ import type {
 } from "../../drivers/collaboration-provider";
 
 /* ─── Remote-caret styles ──────────────────────────────────────────────────
- * Injected once per page. The caret is a thin coloured bar; a floating
- * pill above it shows the user's name (Google-Docs / Word style). The
- * label fades out a few seconds after the remote user stops moving — we
- * implement that by re-applying a fresh "active" state every time the
- * caret element is re-rendered (which TipTap does on every awareness
- * change, i.e. every keystroke from the remote user).
+ * The caret is a thin coloured bar with a floating name label.
+ * The label fades out a few seconds after the remote user stops moving —
+ * implemented by re-applying a fresh CSS animation on every awareness
+ * change (TipTap rebuilds the decoration on each keystroke from a remote
+ * user). On hover the label is always visible.
  */
 const CARET_STYLE_ID = "tpe-collab-caret-style";
 const CARET_STYLE_RULES = `
@@ -33,7 +32,7 @@ const CARET_STYLE_RULES = `
   top: -1.45em;
   white-space: nowrap;
   background: var(--tpe-caret-color, #2563eb);
-  color: #fff;
+  color: var(--tpe-caret-text-color, #fff);
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
@@ -43,8 +42,6 @@ const CARET_STYLE_RULES = `
   pointer-events: none;
   font-family: var(--font-sans, system-ui, sans-serif);
   letter-spacing: 0.01em;
-  /* Fade out after ~2.5s, restart whenever the caret element is recreated
-     (TipTap rebuilds the decoration on every awareness change). */
   animation: tpe-caret-label-fade 3.5s ease-out forwards;
 }
 @keyframes tpe-caret-label-fade {
@@ -71,12 +68,33 @@ function attachCaretStyles() {
   document.head.appendChild(el);
 }
 
+/**
+ * Returns true when `bgColor` is dark enough that white text reads well
+ * over it. Ported from blocknotes/YCursorPlugin.ts.
+ * Inspired by https://stackoverflow.com/a/3943023
+ */
+function isDarkColor(bgColor: string): boolean {
+  const hex =
+    bgColor.charAt(0) === "#" ? bgColor.substring(1, 7) : bgColor;
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  const linearise = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const L = 0.2126 * linearise(r) + 0.7152 * linearise(g) + 0.0722 * linearise(b);
+  return L <= 0.179;
+}
+
 function renderRemoteCaret(user: Record<string, unknown>): HTMLElement {
   const color = (user.color as string | undefined) ?? "#2563eb";
   const name = (user.name as string | undefined) ?? "Anonymous";
+  const textColor = isDarkColor(color) ? "#fff" : "#000";
+
   const caret = document.createElement("span");
   caret.className = "tpe-collab-caret";
   caret.style.setProperty("--tpe-caret-color", color);
+  caret.style.setProperty("--tpe-caret-text-color", textColor);
+
   const label = document.createElement("span");
   label.className = "tpe-collab-caret-label";
   label.textContent = name;
@@ -96,12 +114,9 @@ function renderRemoteSelection(user: Record<string, unknown>) {
 
 // Session cache keyed by documentId. Providers are created once per
 // document and reused regardless of factory reference identity. This
-// prevents context rebuilds (e.g. mode/readOnly toggle) from tearing
-// down and recreating the Y.Doc, which would reconnect all peers and
-// lose in-flight CRDT state.
-//
-// If the host genuinely needs to swap the transport for the same
-// documentId (unusual), call provider.destroy() externally first.
+// prevents context rebuilds (mode/readOnly toggle) from tearing down
+// and recreating the Y.Doc, which would reconnect all peers and lose
+// in-flight CRDT state.
 const sessions = new Map<string, CollaborationProvider>();
 
 function resolveProvider(
@@ -120,9 +135,10 @@ function resolveProvider(
  *
  * The actual transport (websocket / hocuspocus / TipTap cloud) is
  * host-supplied via `ctx.drivers.collaboration`. The module stays
- * framework-agnostic: it just binds `@tiptap/extension-collaboration`
- * to the host-provided Y.Doc and, when an awareness provider is
- * available, layers `@tiptap/extension-collaboration-caret` on top.
+ * framework-agnostic: it binds `@tiptap/extension-collaboration` to the
+ * host-provided Y.Doc and, when an awareness provider is available, layers
+ * `@tiptap/extension-collaboration-caret` on top with smart dark/light
+ * label text (ported from blocknotes/YCursorPlugin).
  */
 export const collaborationModule: EditorExtensionModule = {
   id: "collaboration",
