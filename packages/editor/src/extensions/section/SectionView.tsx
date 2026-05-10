@@ -6,6 +6,7 @@ import {
   NodeViewWrapper,
   type NodeViewProps,
 } from "@tiptap/react";
+import { TextSelection } from "@tiptap/pm/state";
 import type { SectionExtensionStorage } from "./Section";
 import styles from "./SectionView.module.css";
 
@@ -51,11 +52,18 @@ function PenIcon() {
   );
 }
 
-function LockIcon({ size = 11 }: { size?: number }) {
+function LockClosedIcon({ size = 11 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <rect x="4" y="8" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M5.5 8V6a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="16" r="1"/><rect x="3" y="10" width="18" height="12" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/>
+    </svg>
+  );
+}
+
+function LockOpenIcon({ size = 11 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="16" r="1"/><rect width="18" height="12" x="3" y="10" rx="2"/><path d="M7 10V7a5 5 0 0 1 9.33-2.5"/>
     </svg>
   );
 }
@@ -82,6 +90,7 @@ function TrashIcon() {
 export function SectionView({
   node,
   editor,
+  getPos,
   updateAttributes,
 }: NodeViewProps) {
   const storage = (editor.storage as { section?: SectionExtensionStorage }).section;
@@ -136,26 +145,70 @@ export function SectionView({
                 if (next !== current) updateAttributes({ title: next });
               }}
             />
-            {mutableContent && (
-              <span className={styles.mutableBadge}>Mutable</span>
-            )}
           </div>
 
           {/* Controls — opacity toggled by CSS :hover on parent */}
-          <div className={styles.controls} aria-hidden="true">
-            <button type="button" className={styles.controlBtn} title="Edit section">
+          <div className={styles.controls}>
+            <button
+              type="button"
+              className={styles.controlBtn}
+              title="Edit section title"
+              aria-label="Edit section title"
+              onClick={() => {
+                // Focus the title input in this section header
+                const wrapper = document.querySelector(
+                  `[data-section-id="${sectionId}"]`,
+                );
+                const input = wrapper?.querySelector(
+                  `.${styles.titleInput}`,
+                ) as HTMLInputElement | null;
+                input?.focus();
+                input?.select();
+              }}
+            >
               <PenIcon />
             </button>
-            <button type="button" className={styles.controlBtn} title="Toggle read-only">
-              <LockIcon />
-            </button>
-            <button type="button" className={styles.controlBtn} title="Add block">
+
+            <button
+              type="button"
+              className={styles.controlBtn}
+              title="Add paragraph inside section"
+              aria-label="Add paragraph"
+              onClick={() => {
+                // Insert a paragraph at the end of this section
+                const pos = getPos();
+                if (typeof pos !== "number") return;
+                const sectionNode = editor.state.doc.nodeAt(pos);
+                if (!sectionNode) return;
+                const insertPos = pos + sectionNode.nodeSize - 1;
+                const paragraph = editor.state.schema.nodes.paragraph?.create();
+                if (!paragraph) return;
+                const tr = editor.state.tr.insert(insertPos, paragraph);
+                // Place cursor in the new paragraph
+                tr.setSelection(TextSelection.create(tr.doc, insertPos + 1));
+                editor.view.dispatch(tr);
+                editor.view.focus();
+              }}
+            >
               <PlusIcon />
             </button>
             <button
               type="button"
               className={`${styles.controlBtn} ${styles.controlBtnDanger}`}
               title="Delete section"
+              aria-label="Delete section"
+              onClick={() => {
+                // Delete this section
+                const pos = getPos();
+                if (typeof pos !== "number") return;
+                const sectionNode = editor.state.doc.nodeAt(pos);
+                if (!sectionNode) return;
+                const tr = editor.state.tr.delete(
+                  pos,
+                  pos + sectionNode.nodeSize,
+                );
+                editor.view.dispatch(tr);
+              }}
             >
               <TrashIcon />
             </button>
@@ -175,11 +228,19 @@ export function SectionView({
               modifiedAt={modifiedAt}
             />
           )}
-          {!mutableContent && (
-            <div className={styles.docLock} contentEditable={false}>
-              <LockIcon size={12} />
-            </div>
-          )}
+          <button
+            type="button"
+            className={`${styles.docLock} ${mutableContent ? styles.docLockEditable : styles.docLockLocked}`}
+            contentEditable={false}
+            title={mutableContent ? "Lock section — prevent changes to structure" : "Unlock section — allow adding/removing content"}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              updateAttributes({ mutableContent: !mutableContent });
+            }}
+          >
+            {mutableContent ? <LockOpenIcon size={12} /> : <LockClosedIcon size={12} />}
+          </button>
         </>
       )}
 
