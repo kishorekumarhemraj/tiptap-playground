@@ -195,6 +195,9 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
       doc.forEach((node, pos) => {
         const instruction = node.attrs?.instruction as string | null;
         if (!instruction) return;
+        // section and editableField render their own instruction UI in their
+        // NodeViews — adding a widget decoration here would duplicate it.
+        if (node.type.name === "section" || node.type.name === "editableField") return;
         decos.push(
           Decoration.widget(
             pos,
