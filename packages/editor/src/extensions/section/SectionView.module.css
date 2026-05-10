@@ -302,13 +302,27 @@
   right: 12px;
   opacity: 0;
   transition: opacity var(--transition-normal, 160ms ease);
-  pointer-events: none;
-  z-index: 2;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 5;
   background: var(--bg-card, #fff);
-  line-height: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
   color: var(--fg-3, #a1a1aa);
+  transition: opacity var(--transition-normal, 160ms ease), transform var(--transition-fast, 100ms ease), background var(--transition-fast);
+}
+
+.docLock:hover {
+  transform: scale(1.1);
+  background: var(--bg-hover, #efeeec);
+}
+
+.docLock:active {
+  transform: scale(0.95);
 }
 
 .docLockLocked {

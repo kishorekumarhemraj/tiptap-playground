@@ -168,18 +168,7 @@ export function SectionView({
             >
               <PenIcon />
             </button>
-            <button
-              type="button"
-              className={`${styles.controlBtn} ${mutableContent ? styles.controlBtnActive : styles.controlBtnLocked}`}
-              title={mutableContent ? "Lock — authors cannot add or remove content" : "Unlock — allow authors to add content"}
-              aria-label={mutableContent ? "Lock section" : "Unlock section"}
-              aria-pressed={mutableContent}
-              onClick={() => {
-                updateAttributes({ mutableContent: !mutableContent });
-              }}
-            >
-              {mutableContent ? <LockOpenIcon /> : <LockClosedIcon />}
-            </button>
+
             <button
               type="button"
               className={styles.controlBtn}
@@ -239,9 +228,19 @@ export function SectionView({
               modifiedAt={modifiedAt}
             />
           )}
-          <div className={`${styles.docLock} ${mutableContent ? styles.docLockEditable : styles.docLockLocked}`} contentEditable={false}>
+          <button
+            type="button"
+            className={`${styles.docLock} ${mutableContent ? styles.docLockEditable : styles.docLockLocked}`}
+            contentEditable={false}
+            title={mutableContent ? "Lock section — prevent changes to structure" : "Unlock section — allow adding/removing content"}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              updateAttributes({ mutableContent: !mutableContent });
+            }}
+          >
             {mutableContent ? <LockOpenIcon size={12} /> : <LockClosedIcon size={12} />}
-          </div>
+          </button>
         </>
       )}
 
