@@ -158,6 +158,16 @@
   border-color: rgba(220, 38, 38, 0.3);
 }
 
+.controlBtnActive {
+  background: var(--teal-chip, rgba(13, 148, 136, 0.13));
+  border-color: var(--teal, #0d9488);
+  color: var(--teal, #0d9488);
+}
+
+.controlBtnActive:hover {
+  background: rgba(13, 148, 136, 0.2);
+}
+
 /* ─── Instruction row (template mode) ───────────────────────────────────── */
 .instructionRow {
   display: flex;

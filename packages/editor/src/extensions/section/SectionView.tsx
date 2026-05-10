@@ -6,6 +6,7 @@ import {
   NodeViewWrapper,
   type NodeViewProps,
 } from "@tiptap/react";
+import { TextSelection } from "@tiptap/pm/state";
 import type { SectionExtensionStorage } from "./Section";
 import styles from "./SectionView.module.css";
 
@@ -82,6 +83,7 @@ function TrashIcon() {
 export function SectionView({
   node,
   editor,
+  getPos,
   updateAttributes,
 }: NodeViewProps) {
   const storage = (editor.storage as { section?: SectionExtensionStorage }).section;
@@ -142,20 +144,78 @@ export function SectionView({
           </div>
 
           {/* Controls — opacity toggled by CSS :hover on parent */}
-          <div className={styles.controls} aria-hidden="true">
-            <button type="button" className={styles.controlBtn} title="Edit section">
+          <div className={styles.controls}>
+            <button
+              type="button"
+              className={styles.controlBtn}
+              title="Edit section title"
+              aria-label="Edit section title"
+              onClick={() => {
+                // Focus the title input in this section header
+                const wrapper = document.querySelector(
+                  `[data-section-id="${sectionId}"]`,
+                );
+                const input = wrapper?.querySelector(
+                  `.${styles.titleInput}`,
+                ) as HTMLInputElement | null;
+                input?.focus();
+                input?.select();
+              }}
+            >
               <PenIcon />
             </button>
-            <button type="button" className={styles.controlBtn} title="Toggle read-only">
+            <button
+              type="button"
+              className={`${styles.controlBtn} ${mutableContent ? styles.controlBtnActive : ""}`}
+              title={mutableContent ? "Lock section (make immutable)" : "Unlock section (make mutable)"}
+              aria-label={mutableContent ? "Lock section" : "Unlock section"}
+              aria-pressed={mutableContent}
+              onClick={() => {
+                updateAttributes({ mutableContent: !mutableContent });
+              }}
+            >
               <LockIcon />
             </button>
-            <button type="button" className={styles.controlBtn} title="Add block">
+            <button
+              type="button"
+              className={styles.controlBtn}
+              title="Add paragraph inside section"
+              aria-label="Add paragraph"
+              onClick={() => {
+                // Insert a paragraph at the end of this section
+                const pos = getPos();
+                if (typeof pos !== "number") return;
+                const sectionNode = editor.state.doc.nodeAt(pos);
+                if (!sectionNode) return;
+                const insertPos = pos + sectionNode.nodeSize - 1;
+                const paragraph = editor.state.schema.nodes.paragraph?.create();
+                if (!paragraph) return;
+                const tr = editor.state.tr.insert(insertPos, paragraph);
+                // Place cursor in the new paragraph
+                tr.setSelection(TextSelection.create(tr.doc, insertPos + 1));
+                editor.view.dispatch(tr);
+                editor.view.focus();
+              }}
+            >
               <PlusIcon />
             </button>
             <button
               type="button"
               className={`${styles.controlBtn} ${styles.controlBtnDanger}`}
               title="Delete section"
+              aria-label="Delete section"
+              onClick={() => {
+                // Delete this section
+                const pos = getPos();
+                if (typeof pos !== "number") return;
+                const sectionNode = editor.state.doc.nodeAt(pos);
+                if (!sectionNode) return;
+                const tr = editor.state.tr.delete(
+                  pos,
+                  pos + sectionNode.nodeSize,
+                );
+                editor.view.dispatch(tr);
+              }}
             >
               <TrashIcon />
             </button>
