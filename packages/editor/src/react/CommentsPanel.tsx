@@ -28,7 +28,6 @@ export function CommentsPanel({
 }: CommentsPanelProps) {
   const [threads, setThreads] = useState<Map<string, ThreadData>>(new Map());
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     return threadStore.subscribe((t) => setThreads(new Map(t)));
@@ -40,7 +39,6 @@ export function CommentsPanel({
       const s = (editor.storage as Record<string, any>).comments;
       if (!s) return;
       setSelectedId(s.selectedThreadId ?? null);
-      setPending(s.pendingComment ?? false);
     };
     update();
     editor.on("transaction", update);
@@ -60,17 +58,7 @@ export function CommentsPanel({
         <span className={styles.count}>{openThreads.length}</span>
       </div>
 
-      {pending && editor && (
-        <ComposerCard
-          editor={editor}
-          onSubmit={(body) => {
-            editor.commands.createCommentThread(body);
-          }}
-          onCancel={() => editor.commands.cancelPendingComment()}
-        />
-      )}
-
-      {openThreads.length === 0 && !pending && (
+      {openThreads.length === 0 && (
         <p className={styles.empty}>
           Select text and click <strong>Comment</strong> to start a discussion.
         </p>
@@ -235,33 +223,6 @@ function CommentRow({
           ? comment.body
           : JSON.stringify(comment.body)}
       </p>
-    </div>
-  );
-}
-
-// ─── ComposerCard (pending new thread) ───────────────────────────────────────
-
-function ComposerCard({
-  editor,
-  onSubmit,
-  onCancel,
-}: {
-  editor: Editor;
-  onSubmit: (body: string) => void;
-  onCancel: () => void;
-}) {
-  const selectionEmpty = editor.state.selection.empty;
-
-  return (
-    <div className={styles.composer}>
-      {selectionEmpty ? (
-        <p className={styles.composerHint}>
-          Select text in the editor first, then submit your comment.
-        </p>
-      ) : (
-        <p className={styles.composerHint}>Adding comment to selected text…</p>
-      )}
-      <InlineComposer onSubmit={onSubmit} onCancel={onCancel} autoFocus />
     </div>
   );
 }
