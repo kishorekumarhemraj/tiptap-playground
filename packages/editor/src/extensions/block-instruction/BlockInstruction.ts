@@ -44,47 +44,38 @@ function saveShowToStorage(show: boolean): void {
   }
 }
 
-const STYLE_TAG_ID = "tpe-block-instruction-style";
-const STYLE_RULES = `
-
-/* Hide ALL instruction surfaces (widget decorations + NodeView banners)
-   when the editor root carries this class. NodeView banners can't
-   re-render on storage mutations, so CSS is the reliable toggle path. */
-.tpe-instructions-hidden .tpe-instruction-widget,
-.tpe-instructions-hidden .tpe-instruction-banner,
-.tpe-instructions-hidden .tpe-field-instruction {
+const TOGGLE_STYLE_TAG_ID = "tpe-block-instruction-toggle-style";
+const HIDE_RULES = `
+/* Hide ALL instruction surfaces (widget decorations + NodeView banners) */
+.tpe-instruction-widget,
+.tpe-instruction-banner,
+.tpe-field-instruction {
   display: none !important;
 }
 
-/* Compact document-mode sections when instructions are hidden.
-   Without the instruction banners the fixed padding/margin leave large
-   blank gaps — especially noticeable with nested sections. */
-.tpe-instructions-hidden .tpe-section {
-  padding-top: 2px !important;
+/* Compact document-mode sections when instructions are hidden. */
+.tpe-section[data-mutable-content="true"] {
   padding-bottom: 2px !important;
-  margin-bottom: 6px !important;
 }
 `;
 
-let styleRefCount = 0;
-
-function attachStyles() {
+function syncStyleToggle(show: boolean) {
   if (typeof document === "undefined") return;
-  styleRefCount++;
-  if (document.getElementById(STYLE_TAG_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_TAG_ID;
-  style.textContent = STYLE_RULES;
-  document.head.appendChild(style);
-}
-
-function detachStyles() {
-  if (typeof document === "undefined") return;
-  styleRefCount = Math.max(0, styleRefCount - 1);
-  if (styleRefCount === 0) {
-    document.getElementById(STYLE_TAG_ID)?.remove();
+  let style = document.getElementById(TOGGLE_STYLE_TAG_ID);
+  if (show) {
+    if (style) style.remove();
+  } else {
+    if (!style) {
+      style = document.createElement("style");
+      style.id = TOGGLE_STYLE_TAG_ID;
+      style.textContent = HIDE_RULES;
+      document.head.appendChild(style);
+    }
   }
 }
+
+function attachStyles() {}
+function detachStyles() {}
 
 /**
  * Authoring-only block attribute that lets template authors annotate
@@ -143,7 +134,7 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
   },
 
   onCreate() {
-    // No longer manually toggling classList; handled by ProseMirror plugin attributes.
+    syncStyleToggle(loadShowFromStorage());
   },
 
   addCommands() {
@@ -154,6 +145,7 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
           const show = !editor.storage.blockInstruction.showInstructions;
           editor.storage.blockInstruction.showInstructions = show;
           saveShowToStorage(show);
+          syncStyleToggle(show);
           if (dispatch) {
             tr.setMeta(instructionKey, { show });
             if (typeof window !== "undefined") {
@@ -166,7 +158,6 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
   },
 
   addProseMirrorPlugins() {
-    attachStyles();
     const editor = this.editor;
 
     function buildDecoSet(
@@ -219,7 +210,12 @@ export const BlockInstruction = Extension.create<{ mode: EditorMode }>({
     return [
       new Plugin({
         key: instructionKey,
-        view: () => ({ destroy: detachStyles }),
+        view: () => ({
+          destroy: () => {
+            const style = document.getElementById(TOGGLE_STYLE_TAG_ID);
+            if (style) style.remove();
+          },
+        }),
         // Stateful decoration set: on transactions that don't change the
         // doc, map existing decoration positions through the step mapping
         // (O(decorations)) instead of re-walking the whole doc (O(nodes)).
