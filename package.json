@@ -4,9 +4,9 @@
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "dev": "HOST=localhost PORT=1234 npx y-websocket & pnpm --filter @tiptap-playground/app dev",
+    "dev": "node server/collab.cjs & pnpm --filter @tiptap-playground/app dev",
     "dev:app": "pnpm --filter @tiptap-playground/app dev",
-    "dev:collab": "HOST=localhost PORT=1234 npx y-websocket",
+    "dev:collab": "node server/collab.cjs",
     "build": "pnpm --filter @tiptap-playground/app build",
     "typecheck": "pnpm -r run typecheck",
     "lint": "pnpm -r run lint"
@@ -15,7 +15,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
-    "@y/websocket-server": "^0.1.5",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "ws": "^8.20.0"
   }
 }
