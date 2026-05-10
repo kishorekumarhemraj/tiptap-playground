@@ -139,7 +139,7 @@ export function SectionView({
               }}
             />
             <span className={mutableContent ? styles.mutableBadge : styles.lockedBadge}>
-              {mutableContent ? "Unlocked" : "Locked"}
+              {mutableContent ? "Editable" : "Locked"}
             </span>
           </div>
 
