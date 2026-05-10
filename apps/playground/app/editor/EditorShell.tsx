@@ -18,7 +18,7 @@ import {
   type VersionsPanelHandle,
 } from "@tiptap-playground/editor/react";
 import { buildPlaygroundDrivers } from "./drivers";
-import { TopNav } from "./TopNav";
+import { TopNav, type DemoUser } from "./TopNav";
 import { ModeBanner } from "./ModeBanner";
 import { RightPanel } from "./RightPanel";
 import { PermissionToast } from "./PermissionToast";
@@ -43,45 +43,33 @@ function loadInitialMode(): EditorMode {
   return "template";
 }
 
-// Demo personas — each tab picks one at random so two tabs can show
-// distinct remote cursors. In a real host the user identity comes from
-// auth (SSO claims, JWT, etc.).
-const DEMO_USERS = [
-  { name: "Priya M.",  color: "#2563eb" },
-  { name: "Alex K.",   color: "#7c3aed" },
-  { name: "Sam T.",    color: "#0d9488" },
-  { name: "Jordan R.", color: "#dc2626" },
-  { name: "Casey L.",  color: "#ea580c" },
-  { name: "Riley P.",  color: "#16a34a" },
-] as const;
+// ──────────────────────────────────────────────────────────────────────────────
+// Five demo users. Each has a stable ID so switching back to a user retains
+// the same identity that authored/modified content earlier in the session.
+// In a production app, this list is replaced by a single authenticated user
+// whose identity comes from the auth layer (SSO claims, JWT, etc.).
+// ──────────────────────────────────────────────────────────────────────────────
+const AVAILABLE_USERS: DemoUser[] = [
+  { id: "user-kishore-kumar",   name: "Kishore Kumar",   color: "#2563eb", initials: "KK" },
+  { id: "user-peter-johnson",   name: "Peter Johnson",   color: "#7c3aed", initials: "PJ" },
+  { id: "user-sarah-chen",      name: "Sarah Chen",      color: "#0d9488", initials: "SC" },
+  { id: "user-maria-gonzalez",  name: "Maria Gonzalez",  color: "#dc2626", initials: "MG" },
+  { id: "user-alex-nakamura",   name: "Alex Nakamura",   color: "#ea580c", initials: "AN" },
+];
 
-interface LocalUser {
-  id: string;
-  name: string;
-  color: string;
-}
-
-function loadOrCreateLocalUser(): LocalUser {
-  if (typeof window === "undefined") {
-    return { id: "user-ssr", name: "You", color: "#2563eb" };
-  }
+function loadOrCreateLocalUser(): DemoUser {
+  if (typeof window === "undefined") return AVAILABLE_USERS[0];
   try {
     const raw = window.sessionStorage.getItem(USER_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<LocalUser>;
-      if (parsed.id && parsed.name && parsed.color) {
-        return parsed as LocalUser;
-      }
+      const parsed = JSON.parse(raw) as Partial<DemoUser>;
+      // Match against our fixed roster so the object is always complete
+      const match = AVAILABLE_USERS.find((u) => u.id === parsed.id);
+      if (match) return match;
     }
   } catch { /* corrupt — fall through */ }
-  const persona = DEMO_USERS[Math.floor(Math.random() * DEMO_USERS.length)];
-  // Random ID per tab so each tab is a distinct peer in awareness.
-  const id = `user-${Math.random().toString(36).slice(2, 9)}`;
-  const user: LocalUser = { id, name: persona.name, color: persona.color };
-  try {
-    window.sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-  } catch { /* non-fatal */ }
-  return user;
+  // Default: first user in the roster
+  return AVAILABLE_USERS[0];
 }
 
 const DEFAULT_CONTENT = `
@@ -132,7 +120,7 @@ function loadInitialContent(): JSONContent | string {
 }
 
 export function EditorShell() {
-  const userRef = useRef<LocalUser>(loadOrCreateLocalUser());
+  const [currentUser, setCurrentUser] = useState<DemoUser>(loadOrCreateLocalUser);
   const [mode, setModeState] = useState<EditorMode>(loadInitialMode);
   const setMode = useCallback((next: EditorMode) => {
     setModeState(next);
@@ -141,6 +129,17 @@ export function EditorShell() {
     } catch {
       /* non-fatal */
     }
+  }, []);
+
+  // User switch handler: persist to sessionStorage and update state.
+  // Because `currentUser` flows into the context useMemo dependency list,
+  // changing the user triggers a full context rebuild — exactly like
+  // re-authenticating with a different session would.
+  const handleUserChange = useCallback((user: DemoUser) => {
+    setCurrentUser(user);
+    try {
+      window.sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+    } catch { /* non-fatal */ }
   }, []);
   const [editor, setEditor] = useState<VersionsPanelHandle | null>(null);
   const [editorHandle, setEditorHandle] = useState<EditorHandle | null>(null);
@@ -207,9 +206,9 @@ export function EditorShell() {
     return {
       documentId: DOCUMENT_ID,
       user: {
-        id: userRef.current.id,
-        name: userRef.current.name,
-        color: userRef.current.color,
+        id: currentUser.id,
+        name: currentUser.name,
+        color: currentUser.color,
         roles: ["author"],
       },
       readOnly: false,
@@ -220,7 +219,7 @@ export function EditorShell() {
       policy,
       events,
     };
-  }, [mode]);
+  }, [mode, currentUser]);
 
   // True after we've successfully seeded the Y.Doc with initial content
   // for this Y.Doc lifetime. Survives the editor instance being recreated
@@ -250,7 +249,13 @@ export function EditorShell() {
 
   return (
     <div className={styles.shell} style={{ "--panel-w": `${panelWidth}px` } as React.CSSProperties}>
-      <TopNav mode={mode} onModeChange={setMode} />
+      <TopNav
+        mode={mode}
+        onModeChange={setMode}
+        currentUser={currentUser}
+        availableUsers={AVAILABLE_USERS}
+        onUserChange={handleUserChange}
+      />
       <ModeBanner mode={mode} />
       <div className={styles.body}>
         <div className={styles.editorColumn}>
@@ -267,7 +272,7 @@ export function EditorShell() {
           editor={editor}
           tiptapEditor={editorHandle?.tiptapEditor ?? null}
           threadStore={driversRef.current.threadStore ?? null}
-          userId={userRef.current.id}
+          userId={currentUser.id}
           docJson={docJson}
           diffSelection={diffSelection}
           onChangeDiffSelection={setDiffSelection}
